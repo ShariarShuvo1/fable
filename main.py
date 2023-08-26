@@ -1,6 +1,6 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QCursor
+from PyQt6.QtGui import QCursor, QPicture, QPixmap
 from audioDownloader import Ui_audioDownloader as ad
 from youtubeWindow import Ui_youtubeDownloader as yd
 from ObjectBuilder import object_builder
@@ -8,6 +8,8 @@ from pytube.__main__ import YouTube
 
 class Ui_MainWindow(object):
     def __init__(self):
+        self.title_logo = None
+        self.title = None
         self.height = None
         self.width = None
         self.MainWindow = None
@@ -25,12 +27,17 @@ class Ui_MainWindow(object):
         MainWindow.setObjectName("MainWindow")
         MainWindow.setWindowIcon(QtGui.QIcon('./assets/logo.png'))
         MainWindow.setWindowTitle("Fable")
-        MainWindow.resize(500, 600)
+        MainWindow.resize(600, 500)
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
+        
+        self.title_logo: QtWidgets.QLabel = object_builder(QtWidgets.QLabel(parent=self.centralwidget), (150, 20, 101, 101), "", 24, True, "", None, None, "Fable")
+        self.title_logo.setPixmap(QPixmap('./assets/logo.png').scaledToHeight(101))
+        self.title: QtWidgets.QLabel = object_builder(QtWidgets.QLabel(parent=self.centralwidget), (260, 20, 301, 100), "Fabel", 54, True, "", None, None, "Fable")
 
-        self.audioDownloader = object_builder(QtWidgets.QPushButton(parent=self.centralwidget), (50, 120, 401, 101), "Story Downloader", 24, True, "", self.audioDownloaderGenerator, self.pointingHandMouse, "Download Audio Story")
 
-        self.youtubeDownloader = object_builder(QtWidgets.QPushButton(parent=self.centralwidget), (50, 280, 401, 101), "Simple Youtube Video Downloader", 18, True, "", self.youtubeDownloaderGenerator, self.pointingHandMouse, "Download Youtube Video")
+        self.audioDownloader = object_builder(QtWidgets.QPushButton(parent=self.centralwidget), (50, 150, 501, 101), "Story Downloader", 24, True, "", self.audioDownloaderGenerator, self.pointingHandMouse, "Download Audio Story")
+
+        self.youtubeDownloader = object_builder(QtWidgets.QPushButton(parent=self.centralwidget), (50, 330, 501, 101), "Simple Youtube Video Downloader", 18, True, "", self.youtubeDownloaderGenerator, self.pointingHandMouse, "Download Youtube Video")
 
         MainWindow.setCentralWidget(self.centralwidget)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
