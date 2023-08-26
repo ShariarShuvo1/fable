@@ -17,8 +17,8 @@ class Ui_MainWindow(object):
         self.centralwidget = None
         self.audioDownloader = None
         self.pointingHandMouse = QCursor(Qt.CursorShape.PointingHandCursor)
-        self.ydCount = 0
-        self.adCount = 0
+        self.ydGenerated = False
+        self.adGenerated = False
         self.main_ui = None
 
     def setupUi(self, MainWindow, main_ui):
@@ -34,10 +34,9 @@ class Ui_MainWindow(object):
         self.title_logo.setPixmap(QPixmap('./assets/logo.png').scaledToHeight(101))
         self.title: QtWidgets.QLabel = object_builder(QtWidgets.QLabel(parent=self.centralwidget), (260, 20, 301, 100), "Fabel", 54, True, "", None, None, "Fable")
 
-
         self.audioDownloader = object_builder(QtWidgets.QPushButton(parent=self.centralwidget), (50, 150, 501, 101), "Story Downloader", 24, True, "", self.audioDownloaderGenerator, self.pointingHandMouse, "Download Audio Story")
 
-        self.youtubeDownloader = object_builder(QtWidgets.QPushButton(parent=self.centralwidget), (50, 330, 501, 101), "Simple Youtube Video Downloader", 18, True, "", self.youtubeDownloaderGenerator, self.pointingHandMouse, "Download Youtube Video")
+        self.youtubeDownloader = object_builder(QtWidgets.QPushButton(parent=self.centralwidget), (50, 330, 501, 101), "YouTube Downloader", 24, True, "", self.youtubeDownloaderGenerator, self.pointingHandMouse, "Download Youtube Video")
 
         MainWindow.setCentralWidget(self.centralwidget)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -46,8 +45,8 @@ class Ui_MainWindow(object):
         self.MainWindow.hide()
 
     def audioDownloaderGenerator(self):
-        if self.adCount == 0:
-            self.adCount += 1
+        if not self.adGenerated:
+            self.adGenerated = True
             self.mainHide()
             self.adWindow = QtWidgets.QMainWindow()
             self.adUi = ad()
@@ -58,8 +57,8 @@ class Ui_MainWindow(object):
             self.adWindow.show()
 
     def youtubeDownloaderGenerator(self):
-        if self.ydCount == 0:
-            self.ydCount += 1
+        if not self.ydGenerated:
+            self.ydGenerated = True
             self.mainHide()
             self.ydWindow = QtWidgets.QMainWindow()
             self.ydUi = yd()
