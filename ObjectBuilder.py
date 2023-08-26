@@ -1,4 +1,4 @@
-from PyQt6 import QtCore, QtGui
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 
 def object_builder(obj, coordinate, text=None, font_size=None, isBold=False, css="", connected=None, mousePointer=None, tooltip=None):
@@ -21,5 +21,7 @@ def object_builder(obj, coordinate, text=None, font_size=None, isBold=False, css
         item.setCursor(mousePointer)
     if tooltip is not None:
         item.setToolTip(tooltip)
+
+    item.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding))
 
     return item
