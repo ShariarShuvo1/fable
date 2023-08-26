@@ -4,7 +4,7 @@ from PyQt6.QtGui import QCursor
 from audioDownloader import Ui_audioDownloader as ad
 from youtubeWindow import Ui_youtubeDownloader as yd
 from ObjectBuilder import object_builder
-
+from pytube.__main__ import YouTube
 
 class Ui_MainWindow(object):
     def __init__(self):
