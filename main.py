@@ -8,6 +8,10 @@ from pytube.__main__ import YouTube
 
 class Ui_MainWindow(object):
     def __init__(self):
+        self.ydUi = None
+        self.adUi = None
+        self.adWindow = None
+        self.ydWindow = None
         self.title_logo = None
         self.title = None
         self.height = None
@@ -27,7 +31,7 @@ class Ui_MainWindow(object):
         MainWindow.setObjectName("MainWindow")
         MainWindow.setWindowIcon(QtGui.QIcon('./assets/logo.png'))
         MainWindow.setWindowTitle("Fable")
-        MainWindow.resize(600, 500)
+        MainWindow.setFixedSize(600, 500)
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         
         self.title_logo: QtWidgets.QLabel = object_builder(QtWidgets.QLabel(parent=self.centralwidget), (150, 20, 101, 101), "", 24, True, "", None, None, "Fable")
@@ -74,9 +78,6 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
-    screenSize = app.screens()[0].availableGeometry()
-    ui.height = screenSize.height()
-    ui.width = screenSize.width()
     ui.setupUi(MainWindow, ui)
     MainWindow.show()
     sys.exit(app.exec())
