@@ -1,14 +1,18 @@
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap, QFont, QCursor
+import requests
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QPixmap, QFont, QCursor, QMovie
 from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QProgressBar
-from PyQt6 import QtWidgets
-
+from pytube.__main__ import YouTube
+from VideoInfoThread import VideoInfoThread
 
 
 class Card:
     def __init__(self, ui):
-        w = 1200//100
-        h = 900//100
+        self.video_info_thread = None
+        self.video = None
+        self.streams = None
+        w = 1200 // 100
+        h = 900 // 100
         self.card = QVBoxLayout()
         font = QFont()
         font.setBold(True)
@@ -23,6 +27,7 @@ class Card:
         self.edit_box.setFont(font)
         self.edit_box.setClearButtonEnabled(True)
         self.edit_box.setPlaceholderText("Place your YouTube URL here")
+        self.edit_box.textChanged.connect(self.text_changed)
 
         self.row1.addWidget(self.url)
         self.row1.addWidget(self.edit_box)
@@ -33,12 +38,14 @@ class Card:
         self.resolution_list = QComboBox()
         self.resolution_list.setFont(font)
         self.resolution_list.setPlaceholderText("Select a resolution")
+        self.resolution_list.setDisabled(True)
 
         self.download_button = QPushButton("Download")
         self.download_button.setFont(font)
         self.download_button.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.download_button.setMaximumWidth(w*20)
-        self.download_button.clicked.connect(lambda: ui.download_clicked(self.edit_box.text()))
+        self.download_button.setMaximumWidth(w * 20)
+        # self.download_button.clicked.connect()
+        self.download_button.setDisabled(True)
 
         self.row2.addWidget(self.resolution_list)
         self.row2.addWidget(self.download_button)
@@ -50,7 +57,10 @@ class Card:
         self.thumbnail_preview.setMaximumWidth(270)
 
         self.description_preview = QLabel()
-        self.description_preview.setFont(font)
+        temp_font = font
+        temp_font.setPointSize(13)
+        temp_font.setBold(False)
+        self.description_preview.setFont(temp_font)
 
         self.row3.addWidget(self.thumbnail_preview)
         self.row3.addWidget(self.description_preview)
@@ -71,3 +81,14 @@ class Card:
         self.card.addLayout(self.row2)
         self.card.addLayout(self.row3)
         self.card.addLayout(self.row4)
+
+    def text_changed(self):
+        url = self.edit_box.text()
+        if len(url) > 10:
+            gif = QMovie('./assets/thumbnail_loading.gif')
+            gif.setScaledSize(QSize(270, 150))
+            self.thumbnail_preview.setMovie(gif)
+            gif.start()
+            self.video_info_thread = VideoInfoThread()
+            self.video_info_thread.set_values(self, url)
+            self.video_info_thread.start()

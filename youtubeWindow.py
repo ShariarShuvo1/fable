@@ -1,12 +1,7 @@
-# import pytube
-# from pytube import YouTube
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
-import requests
-import shutil
-import os
-from ObjectBuilder import object_builder
+
 from PyQt6.QtWidgets import QScrollArea, QWidget, QGroupBox, QFormLayout, QPushButton, QHBoxLayout, QLineEdit, \
     QVBoxLayout, QGridLayout, QLabel, QComboBox, QProgressBar
 from Card import Card
@@ -27,13 +22,9 @@ class Ui_youtubeDownloader(object):
         self.YoutubeWindow = None
         self.MainWindow = None
 
-    def download_clicked(self, url):
-        print(url)
-
     def setupUi(self, YoutubeWindow, MainWindow):
         self.MainWindow = MainWindow
         self.YoutubeWindow = YoutubeWindow
-        # self.YoutubeWindow.showMaximized()
         self.YoutubeWindow.setFixedSize(1220, 900)
 
         self.group_layout = QGroupBox()
