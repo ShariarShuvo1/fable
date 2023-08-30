@@ -3,12 +3,12 @@ from pytube.__main__ import YouTube
 
 
 class VideoDownloadThread(QtCore.QThread):
-    def set_values(self, card, video):
+    def set_values(self, card, video, window):
         self.card = card
         self.video = video
+        self.window = window
 
     def run(self):
-        self.card.download_button.setText('Downloading Video')
         title = ""
         extension = self.video.mime_type.split('/')[1]
         p = ""
@@ -31,6 +31,5 @@ class VideoDownloadThread(QtCore.QThread):
             abr = '_' + self.video.abr
             title = t + abr + p + f'.{extension}'
 
-        self.card.path = f'./downloads/title'
         self.video.download(output_path='./downloads/', filename=title)
-        self.card.download_button.setText('Downloaded')
+        self.window.queue_process()

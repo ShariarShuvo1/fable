@@ -7,7 +7,8 @@ from pytube.__main__ import YouTube
 
 
 class DualDownloadThread(QtCore.QThread):
-    def set_values(self, card, video):
+    def set_values(self, card, video, window):
+        self.window = window
         self.card = card
         self.video = video
         self.audio_list = self.card.streams.filter(only_audio=True)
@@ -31,6 +32,8 @@ class DualDownloadThread(QtCore.QThread):
         self.card.progress_bar.setValue(0)
         self.card.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: red;}")
         self.card.download_button.setText('Downloading Audio')
+
+        self.card.progress_bar.resetFormat()
 
         self.card.audio_path = self.audio.download()
         os.rename(self.card.audio_path, 'audio.mp3')
@@ -65,4 +68,4 @@ class DualDownloadThread(QtCore.QThread):
             os.remove('audio.mp3')
         if os.path.exists(self.card.video_path):
             os.remove(self.card.video_path)
-
+        self.window.queue_process()

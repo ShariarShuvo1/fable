@@ -6,9 +6,11 @@ from ResolutionObject import ResolutionObject
 
 
 class VideoInfoThread(QtCore.QThread):
-    def set_values(self, card, url):
+    def set_values(self, window, card, url):
+        self.window = window
         self.card = card
         self.url = url
+        self.window.resolution_dict = {}
 
     def get_description(self):
         time = self.card.video.length
@@ -33,7 +35,7 @@ class VideoInfoThread(QtCore.QThread):
             self.card.thumbnail_preview.setPixmap(data.scaledToHeight(150))
             self.card.description_preview.setText(self.get_description())
             self.add_to_combo()
-            self.card.download_button.setDisabled(False)
+            self.window.download_button.setDisabled(False)
 
         except:
             self.card.description_preview.setText("This video can not be downloaded")
@@ -45,13 +47,13 @@ class VideoInfoThread(QtCore.QThread):
                 obj = ResolutionObject(r, r.itag, r.mime_type, r.resolution, r.filesize_mb, r.fps)
             else:
                 obj = ResolutionObject(r, r.itag, r.mime_type, r.abr, r.filesize_mb)
-            self.card.resolution_dict[str(obj)] = obj
+            self.window.resolution_dict[str(obj)] = obj
         idx = 0
-        for stream in self.card.resolution_dict.keys():
-            self.card.resolution_list.addItem(stream)
+        for stream in self.window.resolution_dict.keys():
+            self.window.resolution_list.addItem(stream)
             if 'audio' in stream.lower():
-                self.card.resolution_list.setItemIcon(idx, QIcon('assets/icons/music.png'))
+                self.window.resolution_list.setItemIcon(idx, QIcon('assets/icons/music.png'))
             else:
-                self.card.resolution_list.setItemIcon(idx, QIcon('assets/icons/video.png'))
+                self.window.resolution_list.setItemIcon(idx, QIcon('assets/icons/video.png'))
             idx += 1
-        self.card.resolution_list.setDisabled(False)
+        self.window.resolution_list.setDisabled(False)
