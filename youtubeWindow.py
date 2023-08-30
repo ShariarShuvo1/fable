@@ -40,8 +40,27 @@ class Ui_youtubeDownloader(object):
         self.group_layout.setLayout(self.body)
         self.scroll_bar = QScrollArea()
         self.scroll_bar.setWidget(self.group_layout)
+        self.scroll_bar.setWidgetResizable(True)
         self.YoutubeWindow.setCentralWidget(self.scroll_bar)
         QtCore.QMetaObject.connectSlotsByName(self.YoutubeWindow)
+
+    def add_new_card(self):
+        self.cards.append(Card(self))
+        self.body.addLayout(self.cards[-1].card)
+
+    def delete_card(self, card, obj):
+        if len(self.cards) > 1 and obj.download_button.text() == 'Downloaded':
+            for i in range(self.body.count()):
+                layout_item = self.body.itemAt(i)
+                if layout_item.layout() == card:
+                    for j in reversed(range(layout_item.count())):
+                        new_layout = layout_item.itemAt(j)
+                        for k in reversed(range(new_layout.count())):
+                            new_layout.itemAt(k).widget().deleteLater()
+                        layout_item.removeItem(new_layout)
+                    self.body.removeItem(layout_item)
+                    break
+            self.cards.remove(obj)
 
 
 if __name__ == "__main__":

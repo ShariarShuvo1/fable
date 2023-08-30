@@ -1,5 +1,6 @@
 class ResolutionObject:
-    def __init__(self, tag, video_type, resolution, size, fps='Audio'):
+    def __init__(self, source, tag, video_type, resolution, size, fps='Audio'):
+        self.source = source
         self.tag = tag
         self.video_type = video_type
         self.resolution = resolution
