@@ -34,7 +34,6 @@ class DualDownloadThread(QtCore.QThread):
 
         self.card.audio_path = self.audio.download()
         os.rename(self.card.audio_path, 'audio.mp3')
-        print('hey')
         self.card.download_button.setText('Downloaded')
 
         try:
@@ -50,8 +49,10 @@ class DualDownloadThread(QtCore.QThread):
         final = video.set_audio(audio)
         x = self.card.video_path.split('\\')[-1]
         x = x.split('.')[0]
-        path = f'{x}_edited.mp4'
-        print(path)
+        if 'mp4' in self.card.video_path:
+            path = f'{x}_edited.mp4'
+        else:
+            path = f'{x}_edited.webm'
         if nvidia_available:
             final.write_videofile(path, codec="h264_nvenc", threads=8)
         else:
