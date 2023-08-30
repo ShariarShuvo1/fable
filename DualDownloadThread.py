@@ -1,3 +1,7 @@
+import os
+import subprocess
+
+import moviepy.editor as VideoEditor
 from PyQt6 import QtCore
 from pytube.__main__ import YouTube
 
@@ -6,32 +10,58 @@ class DualDownloadThread(QtCore.QThread):
     def set_values(self, card, video):
         self.card = card
         self.video = video
-        self.audio = self.card.streams.filter(only_audio=True).first()
+        self.audio_list = self.card.streams.filter(only_audio=True)
+        self.audio = self.audio_list.first()
+        x = 0
+        for audio in self.audio_list:
+            if audio.mime_type == "audio/mp4":
+                rate = int(audio.abr.split('kbps')[0])
+                if rate > x:
+                    x = rate
+                    self.audio = audio
 
     def run(self):
         self.card.download_button.setText('Downloading Video')
-        extension_video = self.video.mime_type.split('/')[1]
-        t = ""
-        for char in self.video.title:
-            if char not in "#%&{}()[]^;/|\\$!'\":@<>*?+`~=.":
-                t += char
+        self.card.video_path = self.video.download()
+        if 'mp4' in self.card.video_path:
+            os.rename(self.card.video_path, 'video.mp4')
+        else:
+            os.rename(self.card.video_path, 'video.webm')
 
-        res = '_' + str(self.video.resolution)
-        fps = '_' + str(self.video.fps) + 'fps'
-        self.card.video_title = t + fps + res + f'.{extension_video}'
-        extension_audio = self.audio.mime_type.split('/')[1]
-        if extension_audio == 'mp4':
-            extension_audio = 'mp3'
-        abr = '_' + self.audio.abr
-        audio_title = t + abr + f'.{extension_audio}'
-        self.card.video_path = f'./downloads/{self.card.video_title}'
-        self.card.video_path = self.video.download(output_path='./downloads/', filename=self.card.video_title)
         self.card.progress_bar.setValue(0)
         self.card.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: red;}")
         self.card.download_button.setText('Downloading Audio')
 
-        self.card.audio_path = f'./downloads/{audio_title}'
-        self.card.audio_path = self.video.download(output_path='./downloads/', filename=audio_title)
+        self.card.audio_path = self.audio.download()
+        os.rename(self.card.audio_path, 'audio.mp3')
+        print('hey')
         self.card.download_button.setText('Downloaded')
-        self.card.merge_files()
+
+        try:
+            subprocess.check_output('nvidia-smi')
+            nvidia_available = True
+        except Exception:
+            nvidia_available = False
+        if 'mp4' in self.card.video_path:
+            video = VideoEditor.VideoFileClip('video.mp4')
+        else:
+            video = VideoEditor.VideoFileClip('video.webm')
+        audio = VideoEditor.AudioFileClip('audio.mp3')
+        final = video.set_audio(audio)
+        x = self.card.video_path.split('\\')[-1]
+        x = x.split('.')[0]
+        path = f'{x}_edited.mp4'
+        print(path)
+        if nvidia_available:
+            final.write_videofile(path, codec="h264_nvenc", threads=8)
+        else:
+            final.write_videofile(path)
+        if os.path.exists('video.mp4'):
+            os.remove('video.mp4')
+        if os.path.exists('video.webm'):
+            os.remove('video.webm')
+        if os.path.exists('audio.mp3'):
+            os.remove('audio.mp3')
+        if os.path.exists(self.card.video_path):
+            os.remove(self.card.video_path)
 

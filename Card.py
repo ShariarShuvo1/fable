@@ -148,20 +148,3 @@ class Card:
 
     def initiate_delete_card(self):
         self.ui.delete_card(self.card, self)
-
-    def merge_files(self):
-        try:
-            subprocess.check_output('nvidia-smi')
-            nvidia_available = True
-        except Exception:
-            nvidia_available = False
-
-        audio = VideoEditor.AudioFileClip(self.audio_path)
-        video = VideoEditor.VideoFileClip(self.video_path)
-        final = video.set_audio(audio)
-        video_title = self.video_title.split('.')[0]
-        if nvidia_available:
-            final.write_videofile("output.mp4")
-        else:
-            final.write_videofile(f"download/{video_title}_edited.mp4")
-        print('done')
