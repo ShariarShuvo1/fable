@@ -17,7 +17,11 @@ class Card:
         self.url = url
         self.video = video
         self.itag = self.video.itag
+        self.is_progressive = self.video.is_progressive
+        self.video_type = self.video.type
         self.card = QVBoxLayout()
+        self.download_complete = False
+        self.downloading = False
         self.current_text = ""
         self.video_title = ""
         self.video_download_thread = None
@@ -84,28 +88,13 @@ class Card:
         self.card.addLayout(self.progress_bar_row)
         self.card.addLayout(self.empty_line_row)
 
-    def initiate_download(self):
-        self.description_preview.setEnabled(True)
-        txt = self.current_text
-        if len(txt) > 3:
-            self.source = self.resolution_dict[txt].source
-
-            if self.source.is_progressive or self.source.type == 'audio':
-                self.download_thread = VideoDownloadThread()
-                self.download_thread.set_values(self, self.source, self.ui)
-                self.download_thread.start()
-            elif self.source.type == 'video':
-                self.video_download_thread = DualDownloadThread()
-                self.video_download_thread.set_values(self, self.source, self.ui)
-                self.video_download_thread.start()
-
     def progress_func(self, video, file_path, remaining):
-        finished = int(((self.source.filesize - remaining)/self.source.filesize)*100)
+        finished = int(((self.video.filesize - remaining)/self.video.filesize)*100)
         self.progress_bar.setValue(finished)
 
     def complete_func(self, a, b):
+        self.progress_bar.setValue(100)
         self.progress_bar.setFormat('Complete')
-        self.description_preview.setDisabled(True)
 
     def initiate_delete_card(self):
         self.ui.delete_card(self.card, self)

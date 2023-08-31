@@ -19,6 +19,8 @@
 *.exe
 *.mp4
 *.mp3
+*.webm
+*.ogg
 
 *__pycache__
 

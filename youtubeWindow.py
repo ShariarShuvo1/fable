@@ -9,10 +9,15 @@ from pytube.__main__ import YouTube
 from VideoInfoThread import VideoInfoThread
 from VideoDownloadThread import VideoDownloadThread
 from DualDownloadThread import DualDownloadThread
+from Downloader import Downloader
 
 
 class Ui_youtubeDownloader(object):
     def __init__(self):
+        self.dual_download_thread = None
+        self.downloader_thread = None
+        self.queue_processing = False
+        self.downloading = False
         self.thumbnail: QPixmap = None
         self.url = None
         self.video_info_thread = None
@@ -55,8 +60,6 @@ class Ui_youtubeDownloader(object):
         self.group_layout.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Maximum, QtWidgets.QSizePolicy.Policy.Maximum))
 
         self.body = QVBoxLayout()
-
-        self.queue = []
 
         font = QFont()
         font.setBold(True)
@@ -151,42 +154,32 @@ class Ui_youtubeDownloader(object):
 
     def queue_process(self):
         if len(self.queue) > 0:
-            card = self.queue.pop(0)
-            card.progress_bar.resetFormat()
-            card.initiate_download()
+            self.downloader_thread = Downloader()
+            self.downloader_thread.set_values(self)
+            self.downloader_thread.start()
 
-    def dict_copy(self):
-        new_dict = {}
-        for key, value in self.resolution_dict.items():
-            new_dict[key] = value
-        return new_dict
+    def download(self, card: Card):
+        card.description_preview.setEnabled(True)
+        card.progress_bar.setFormat('Downloading')
+        if card.is_progressive or card.video_type in 'audio':
+            self.video_download_thread = VideoDownloadThread()
+            self.video_download_thread.set_values(card, self)
+            self.video_download_thread.start()
+        else:
+            self.dual_download_thread = DualDownloadThread()
+            self.dual_download_thread.set_values(card, self)
+            self.dual_download_thread.start()
 
     def download_clicked(self):
         self.cards.append(Card(self, self.url, self.resolution_dict[self.resolution_list.currentText()].source))
         last_card = self.cards[-1]
+        last_card.description_preview.setDisabled(True)
+        last_card.progress_bar.resetFormat()
+        last_card.progress_bar.setFormat('Queued')
         self.card_list.insertLayout(0, last_card.card)
-        # self.cards[-1].current_text = self.resolution_list.currentText()
-        # self.cards[-1].resolution_dict = self.dict_copy()
-        # # print(self.cards[-1].current_text)
-        # # print(self.cards[-1].resolution_dict)
-        # if len(self.queue) == 0:
-        #     self.cards[-1].initiate_download()
-        #     print(self.cards[-1])
-        # else:
-        #     print(self.cards[-1])
-        #     self.queue.append(self.cards[-1])
-        #     self.cards[-1].description_preview.setDisabled(True)
-        #     self.cards[-1].progress_bar.setFormat('Queued')
-        # self.add_new_card()
-        # self.edit_box.clear()
-        # self.download_button.setDisabled(True)
-        # self.resolution_list.clear()
-        # self.resolution_list.setDisabled(True)
-        # self.resolution_dict = {}
-
-    def add_new_card(self):
-        self.cards.append(Card(self))
-        self.body.addLayout(self.cards[-1].card)
+        self.queue.append(last_card)
+        if not self.downloading and not self.queue_processing:
+            self.queue_process()
 
     def delete_card(self, card, obj):
         if len(self.cards) > 1 and obj.download_button.text() == 'Downloaded':
