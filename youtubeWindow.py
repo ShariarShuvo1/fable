@@ -13,6 +13,15 @@ from DualDownloadThread import DualDownloadThread
 
 class Ui_youtubeDownloader(object):
     def __init__(self):
+        self.thumbnail: QPixmap = None
+        self.url = None
+        self.video_info_thread = None
+        self.streams = None
+        self.video: YouTube = None
+        self.card_list = QVBoxLayout()
+        self.description_preview = None
+        self.thumbnail_preview = None
+        self.media_row = None
         self.queue: list[Card] = []
         self.video_download_thread = None
         self.resolution_dict = {}
@@ -91,13 +100,30 @@ class Ui_youtubeDownloader(object):
         self.resolution_row.addWidget(self.resolution_list)
         self.resolution_row.addWidget(self.download_button)
 
+        # Row 3 Media Info
+        self.media_row = QHBoxLayout()
+        self.thumbnail_preview = QLabel()
+        self.thumbnail_preview.setPixmap(QPixmap('./assets/dummy_thumbnail.png').scaledToHeight(150))
+        self.thumbnail_preview.setMaximumWidth(270)
+
+        self.description_preview = QLabel()
+        temp_font = font
+        temp_font.setPointSize(13)
+        temp_font.setBold(False)
+        self.description_preview.setFont(temp_font)
+
+        self.media_row.addWidget(self.thumbnail_preview)
+        self.media_row.addWidget(self.description_preview)
+
         self.body.addLayout(self.download_row)
         self.body.addLayout(self.resolution_row)
-
-        self.cards.append(Card(self))
-
-        for card in self.cards:
-            self.body.addLayout(card.card)
+        self.body.addLayout(self.media_row)
+        empty_line = QLabel()
+        empty_line.setMaximumHeight(2)
+        empty_line.setStyleSheet("background-color: blue")
+        self.body.addWidget(empty_line)
+        self.body.addLayout(self.card_list)
+        
         self.group_layout.setLayout(self.body)
         self.scroll_bar = QScrollArea()
         self.scroll_bar.setWidget(self.group_layout)
@@ -106,20 +132,22 @@ class Ui_youtubeDownloader(object):
         QtCore.QMetaObject.connectSlotsByName(self.YoutubeWindow)
 
     def text_changed(self):
-        self.cards[-1].description_preview.clear()
-        self.cards[-1].thumbnail_preview.setPixmap(QPixmap('./assets/dummy_thumbnail.png').scaledToHeight(150))
+        self.description_preview.clear()
+        self.thumbnail_preview.setPixmap(QPixmap('./assets/dummy_thumbnail.png').scaledToHeight(150))
         self.download_button.setDisabled(True)
         self.resolution_list.setDisabled(True)
+        self.video = None
+        self.streams = None
 
-        url = self.edit_box.text()
-        if len(url) > 10:
+        self.url = self.edit_box.text()
+        if len(self.url) > 10:
             gif = QMovie('./assets/thumbnail_loading.gif')
             gif.setScaledSize(QSize(270, 150))
-            self.cards[-1].thumbnail_preview.setMovie(gif)
+            self.thumbnail_preview.setMovie(gif)
             gif.start()
-            self.cards[-1].video_info_thread = VideoInfoThread()
-            self.cards[-1].video_info_thread.set_values(self, self.cards[-1], url)
-            self.cards[-1].video_info_thread.start()
+            self.video_info_thread = VideoInfoThread()
+            self.video_info_thread.set_values(self, self.url)
+            self.video_info_thread.start()
 
     def queue_process(self):
         if len(self.queue) > 0:
@@ -134,24 +162,27 @@ class Ui_youtubeDownloader(object):
         return new_dict
 
     def download_clicked(self):
-        self.cards[-1].current_text = self.resolution_list.currentText()
-        self.cards[-1].resolution_dict = self.dict_copy()
-        # print(self.cards[-1].current_text)
-        # print(self.cards[-1].resolution_dict)
-        if len(self.queue) == 0:
-            self.cards[-1].initiate_download()
-            print(self.cards[-1])
-        else:
-            print(self.cards[-1])
-            self.queue.append(self.cards[-1])
-            self.cards[-1].description_preview.setDisabled(True)
-            self.cards[-1].progress_bar.setFormat('Queued')
-        self.add_new_card()
-        self.edit_box.clear()
-        self.download_button.setDisabled(True)
-        self.resolution_list.clear()
-        self.resolution_list.setDisabled(True)
-        self.resolution_dict = {}
+        self.cards.append(Card(self, self.url, self.resolution_dict[self.resolution_list.currentText()].source))
+        last_card = self.cards[-1]
+        self.card_list.insertLayout(0, last_card.card)
+        # self.cards[-1].current_text = self.resolution_list.currentText()
+        # self.cards[-1].resolution_dict = self.dict_copy()
+        # # print(self.cards[-1].current_text)
+        # # print(self.cards[-1].resolution_dict)
+        # if len(self.queue) == 0:
+        #     self.cards[-1].initiate_download()
+        #     print(self.cards[-1])
+        # else:
+        #     print(self.cards[-1])
+        #     self.queue.append(self.cards[-1])
+        #     self.cards[-1].description_preview.setDisabled(True)
+        #     self.cards[-1].progress_bar.setFormat('Queued')
+        # self.add_new_card()
+        # self.edit_box.clear()
+        # self.download_button.setDisabled(True)
+        # self.resolution_list.clear()
+        # self.resolution_list.setDisabled(True)
+        # self.resolution_dict = {}
 
     def add_new_card(self):
         self.cards.append(Card(self))

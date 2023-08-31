@@ -6,14 +6,12 @@ from ResolutionObject import ResolutionObject
 
 
 class VideoInfoThread(QtCore.QThread):
-    def set_values(self, window, card, url):
+    def set_values(self, window, url):
         self.window = window
-        self.card = card
         self.url = url
-        self.window.resolution_dict = {}
 
     def get_description(self):
-        time = self.card.video.length
+        time = self.window.video.length
         duration_hour = time//3600
         duration_minute = (time-(duration_hour*3600))//60
         duration_second = time - (duration_hour*3600) - (duration_minute*60)
@@ -23,37 +21,43 @@ class VideoInfoThread(QtCore.QThread):
             time = f'{duration_minute} Minute: {duration_second} Second'
         else:
             time = f'{duration_second} Second'
-        return f'Title: {self.card.video.title}\nChannel: {self.card.video.author}\nViews: {self.card.video.views}\nDuration: {time}'
+        return f'Title: {self.window.video.title}\nChannel: {self.window.video.author}\nViews: {self.window.video.views}\nDuration: {time}'
 
     def run(self):
         try:
-            self.card.description_preview.setText("Loading ...")
-            self.card.video = YouTube(self.url, on_progress_callback=self.card.progress_func, on_complete_callback=self.card.complete_func)
-            self.card.streams = self.card.video.streams
-            data = QPixmap()
-            data.loadFromData(requests.get(self.card.video.thumbnail_url, stream=True).content)
-            self.card.thumbnail_preview.setPixmap(data.scaledToHeight(150))
-            self.card.description_preview.setText(self.get_description())
+            self.window.description_preview.setText("Loading ...")
+            self.window.video = YouTube(self.url)
+            self.window.streams = self.window.video.streams
+            self.window.thumbnail = QPixmap()
+            self.window.thumbnail.loadFromData(requests.get(self.window.video.thumbnail_url, stream=True).content)
+            self.window.thumbnail_preview.setPixmap(self.window.thumbnail.scaledToHeight(150))
+            self.window.description_preview.setText(self.get_description())
             self.add_to_combo()
-            self.window.download_button.setDisabled(False)
 
         except:
-            self.card.description_preview.setText("This video can not be downloaded")
-            self.card.thumbnail_preview.setPixmap(QPixmap('./assets/dummy_thumbnail.png').scaledToHeight(150))
+            self.window.description_preview.setText("This video can not be downloaded")
+            self.window.thumbnail_preview.setPixmap(QPixmap('./assets/dummy_thumbnail.png').scaledToHeight(150))
 
     def add_to_combo(self):
-        for r in self.card.streams:
+        self.window.resolution_dict = {}
+        for r in self.window.video.streams:
             if r.type == 'video':
                 obj = ResolutionObject(r, r.itag, r.mime_type, r.resolution, r.filesize_mb, r.fps)
             else:
                 obj = ResolutionObject(r, r.itag, r.mime_type, r.abr, r.filesize_mb)
             self.window.resolution_dict[str(obj)] = obj
         idx = 0
-        for stream in self.window.resolution_dict.keys():
+        for stream, obj in self.window.resolution_dict.items():
             self.window.resolution_list.addItem(stream)
             if 'audio' in stream.lower():
                 self.window.resolution_list.setItemIcon(idx, QIcon('assets/icons/music.png'))
+            elif obj.source.is_progressive:
+                self.window.resolution_list.setItemIcon(idx, QIcon('assets/icons/video-audio.png'))
             else:
-                self.window.resolution_list.setItemIcon(idx, QIcon('assets/icons/video.png'))
+                if obj.nvidia_available:
+                    self.window.resolution_list.setItemIcon(idx, QIcon('assets/icons/nvidia.png'))
+                else:
+                    self.window.resolution_list.setItemIcon(idx, QIcon('assets/icons/video.png'))
             idx += 1
         self.window.resolution_list.setDisabled(False)
+        self.window.download_button.setDisabled(False)

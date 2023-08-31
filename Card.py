@@ -11,23 +11,26 @@ from DualDownloadThread import DualDownloadThread
 
 
 class Card:
-    def __init__(self, ui):
+
+    def __init__(self, ui, url, video):
+        self.ui = ui
+        self.url = url
+        self.video = video
+        self.itag = self.video.itag
+        self.card = QVBoxLayout()
         self.current_text = ""
         self.video_title = ""
         self.video_download_thread = None
         self.audio_path = ""
         self.video_path = ""
-        self.ui = ui
         self.path = ""
         self.source = None
         self.download_thread = None
         self.resolution_dict = dict()
         self.video_info_thread = None
-        self.video = None
         self.streams = None
         w = 1200 // 100
         h = 900 // 100
-        self.card = QVBoxLayout()
         font = QFont()
         font.setBold(True)
         font.setPointSize(16)
@@ -35,14 +38,19 @@ class Card:
         # Row 3 Media Info
         self.media_row = QHBoxLayout()
         self.thumbnail_preview = QLabel()
-        self.thumbnail_preview.setPixmap(QPixmap('./assets/dummy_thumbnail.png').scaledToHeight(150))
-        self.thumbnail_preview.setMaximumWidth(270)
+        self.thumbnail_preview.setPixmap(self.ui.thumbnail.scaledToHeight(68))
+        self.thumbnail_preview.setMaximumWidth(120)
 
         self.description_preview = QLabel()
         temp_font = font
-        temp_font.setPointSize(13)
+        temp_font.setPointSize(11)
         temp_font.setBold(False)
         self.description_preview.setFont(temp_font)
+        if 'video' in self.video.type:
+            string_to_display = f'{self.ui.video.title}\nQuality: {self.video.resolution}\nFPS: {self.video.fps}'
+        else:
+            string_to_display = f'{self.ui.video.title}\nQuality: {self.video.abr}\nType: Audio'
+        self.description_preview.setText(string_to_display)
 
         self.media_row.addWidget(self.thumbnail_preview)
         self.media_row.addWidget(self.description_preview)
@@ -62,7 +70,7 @@ class Card:
         self.progress_bar_row.addWidget(self.progress_bar)
         self.progress_bar_row.addWidget(self.delete_button)
 
-        # Row 4 empty line
+        # Row 5 empty line
 
         self.empty_line_row = QVBoxLayout()
 
