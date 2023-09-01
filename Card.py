@@ -26,13 +26,10 @@ class MyBarLogger(ProgressBarLogger):
         for (parameter, value) in changes.items():
             x = 'Parameter %s is now %s' % (parameter, value)
             if 'Writing video' in x:
-                self.progress_bar.setValue(0)
-                self.label.setText('Exporting')
+                self.label.setText('Exporting Video')
                 self.first_step_done = True
-                self.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: pink;")
             elif "video ready" in x:
-                self.progress_bar.setValue(100)
-                self.label.setText('Complete')
+                self.label.setText('Download Complete')
 
     def bars_callback(self, bar, attr, value, old_value=None):
         percentage = (value / self.bars[bar]['total']) * 100
@@ -80,9 +77,9 @@ class Card:
         temp_font.setBold(False)
         self.description_preview.setFont(temp_font)
         if 'video' in self.video.type:
-            string_to_display = f'{self.ui.video.title}\nQuality: {self.video.resolution}\nFPS: {self.video.fps}\nSize: {self.video.filesize_mb}MB'
+            string_to_display = f'{self.ui.video.title}\nQuality: {self.video.resolution}\nFPS: {self.video.fps}\nSize: {self.video.filesize_mb}MB   file-type: {self.video.mime_type.split("/")[1]}'
         else:
-            string_to_display = f'{self.ui.video.title}\nQuality: {self.video.abr}\nType: Audio\nSize: {self.video.filesize_mb}MB'
+            string_to_display = f'{self.ui.video.title}\nQuality: {self.video.abr}\nType: Audio\nSize: {self.video.filesize_mb}MB   file-type: {self.video.mime_type.split("/")[1]}'
         self.description_preview.setText(string_to_display)
 
         self.media_row.addWidget(self.thumbnail_preview)
@@ -95,7 +92,6 @@ class Card:
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setMaximumHeight(20)
-        self.progress_bar.setValue(0)
         self.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: green;}")
 
         self.delete_button = QPushButton()
@@ -131,9 +127,6 @@ class Card:
     def progress_func(self, video, file_path, remaining):
         finished = int(((self.video.filesize - remaining) / self.video.filesize) * 100)
         self.progress_bar.setValue(finished)
-
-    def complete_func(self, a, b):
-        self.progress_bar.setValue(100)
 
     def initiate_delete_card(self):
         self.ui.delete_card(self.card, self)

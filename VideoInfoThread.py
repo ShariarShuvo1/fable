@@ -29,7 +29,7 @@ class VideoInfoThread(QtCore.QThread):
             self.window.video = YouTube(self.url)
             self.window.streams = self.window.video.streams
             self.window.thumbnail = QPixmap()
-            self.window.thumbnail.loadFromData(requests.get(self.window.video.thumbnail_url, stream=True).content)
+            self.window.thumbnail.loadFromData(requests.get(self.window.video.thumbnail_url.replace('hq720.jpg', 'maxresdefault.jpg'), stream=True).content)
             self.window.thumbnail_preview.setPixmap(self.window.thumbnail.scaledToHeight(150))
             self.window.description_preview.setText(self.get_description())
             self.add_to_combo()

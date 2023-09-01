@@ -1,4 +1,5 @@
 import os
+import multiprocessing
 import subprocess
 
 import moviepy.editor as VideoEditor
@@ -43,20 +44,18 @@ class DualDownloadThread(QtCore.QThread):
         self.window.downloading = True
 
     def run(self):
+        thread = multiprocessing.cpu_count()
         self.card.status_label.setText('Fetching Data')
-        video_object = YouTube(self.card.url, on_progress_callback=self.card.progress_func,
-                               on_complete_callback=self.card.complete_func)
-        self.video = video_object.streams.get_by_itag(self.card.itag)
-        self.card.video = self.video
-        video_title, video_extension = get_title(video_object, self.video)
+        video_object = YouTube(self.card.url, on_progress_callback=self.card.progress_func)
+        video_youtube = video_object.streams.get_by_itag(self.card.itag)
+        self.card.video = video_youtube
+        video_title, video_extension = get_title(video_object, video_youtube)
         history_remover('video', video_extension)
 
         self.card.status_label.setText('Downloading Video')
-        video_path = self.video.download()
+        video_path = video_youtube.download()
         self.card.status_label.setText('Video Downloaded')
         os.rename(video_path, f'video.{video_extension}')
-
-        self.card.progress_bar.setValue(0)
         self.card.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: red;}")
 
         audio_list = video_object.streams.filter(only_audio=True)
@@ -83,13 +82,14 @@ class DualDownloadThread(QtCore.QThread):
 
         final = video.set_audio(audio)
         path = f'{video_title}_edited.{video_extension}'
-
-        self.card.progress_bar.setValue(0)
-        self.card.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: yellow;")
-
-        final.write_videofile(path, logger=self.card.logger)
+        self.card.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: #FFFF00;}")
+        try:
+            final.write_videofile(path, logger=self.card.logger, threads= thread, codec='h264_nvenc')
+        except:
+            final.write_videofile(path, logger=self.card.logger)
 
         history_remover('video', video_extension)
         history_remover('audio', audio_extension)
         self.window.downloading = False
+        self.card.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: blue;}")
         self.window.queue_process()
