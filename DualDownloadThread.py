@@ -4,7 +4,7 @@ import subprocess
 
 import moviepy.editor as VideoEditor
 from PyQt6 import QtCore
-from proglog import proglog
+from re import sub as remove_space
 
 from pytube.__main__ import YouTube
 
@@ -29,6 +29,7 @@ def get_title(video_object, video):
             extension = 'mp3'
         abr = '_' + video.abr
         title = t + abr + p
+    title = remove_space(' +', ' ', title)
     return title, extension
 
 
@@ -92,4 +93,6 @@ class DualDownloadThread(QtCore.QThread):
         history_remover('audio', audio_extension)
         self.window.downloading = False
         self.card.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: blue;}")
+        self.card.delete_button.setDisabled(False)
+        self.card.status_label.setText('Download Complete')
         self.window.queue_process()

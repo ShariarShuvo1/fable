@@ -9,7 +9,6 @@ from pytube.__main__ import YouTube
 from VideoInfoThread import VideoInfoThread
 from VideoDownloadThread import VideoDownloadThread
 from DualDownloadThread import DualDownloadThread
-from Downloader import Downloader
 
 
 class Ui_youtubeDownloader(object):
@@ -183,10 +182,10 @@ class Ui_youtubeDownloader(object):
             if not self.downloading:
                 self.queue_process()
 
-    def delete_card(self, card, obj):
-        if len(self.cards) > 1 and obj.download_button.text() == 'Downloaded':
-            for i in range(self.body.count()):
-                layout_item = self.body.itemAt(i)
+    def delete_card(self, card, obj: Card):
+        if obj.status_label.text() == 'Download Complete':
+            for i in range(self.card_list.count()):
+                layout_item = self.card_list.itemAt(i)
                 if layout_item.layout() == card:
                     for j in reversed(range(layout_item.count())):
                         new_layout = layout_item.itemAt(j)

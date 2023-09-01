@@ -28,8 +28,6 @@ class MyBarLogger(ProgressBarLogger):
             if 'Writing video' in x:
                 self.label.setText('Exporting Video')
                 self.first_step_done = True
-            elif "video ready" in x:
-                self.label.setText('Download Complete')
 
     def bars_callback(self, bar, attr, value, old_value=None):
         percentage = (value / self.bars[bar]['total']) * 100

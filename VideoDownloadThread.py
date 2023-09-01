@@ -1,5 +1,6 @@
 from PyQt6 import QtCore
 from pytube.__main__ import YouTube
+from re import sub as remove_space
 
 
 class VideoDownloadThread(QtCore.QThread):
@@ -32,6 +33,7 @@ class VideoDownloadThread(QtCore.QThread):
                 extension = 'mp3'
             abr = '_' + video.abr
             title = t + abr + p + f'.{extension}'
+        title = remove_space(' +', ' ', title)
         if video.type == 'audio':
             self.card.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: red;}")
         self.card.status_label.setText(f'Downloading {video.type}')
@@ -39,4 +41,5 @@ class VideoDownloadThread(QtCore.QThread):
         self.card.status_label.setText('Download Complete')
         self.window.downloading = False
         self.card.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: blue;}")
+        self.card.delete_button.setDisabled(False)
         self.window.queue_process()
