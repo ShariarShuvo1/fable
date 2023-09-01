@@ -12,14 +12,16 @@ class ResolutionObject:
         if source.is_progressive or 'audio' in self.video_type.lower():
             self.note = f'          No Render [Fast]'
         else:
-            self.note = f'          iGPU Render [Slow]'
+            self.note = f'          libx264 Codec [Slow]'
             try:
                 subprocess.check_output('nvidia-smi')
                 self.nvidia_available = True
             except Exception:
                 self.nvidia_available = False
-            if self.nvidia_available:
-                self.note = f'          Nvidia Render [Super Fast]'
+            if self.nvidia_available and 'mp4' in source.mime_type:
+                self.note = f'           h264_nvenc Codec [Super Fast]'
+            elif 'webm' in source.mime_type:
+                self.note = f'          libvpx Codec [Slow]'
 
     def __str__(self):
         if self.fps != 'Audio':

@@ -4,10 +4,39 @@ import subprocess
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QPixmap, QFont, QCursor, QMovie, QIcon
 from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QProgressBar
+from proglog import ProgressBarLogger
+
 from pytube.__main__ import YouTube
 from VideoInfoThread import VideoInfoThread
 from VideoDownloadThread import VideoDownloadThread
 from DualDownloadThread import DualDownloadThread
+
+
+class MyBarLogger(ProgressBarLogger):
+
+    def __init__(self, progress_bar: QProgressBar, label: QLabel):
+        super().__init__()
+        self.progress_bar: QProgressBar = progress_bar
+        self.label: QLabel = label
+        self.first_step_done = False
+
+    def callback(self, **changes):
+        if not self.first_step_done and self.label.text() == 'Audio Downloaded':
+            self.label.setText('Mixing files')
+        for (parameter, value) in changes.items():
+            x = 'Parameter %s is now %s' % (parameter, value)
+            if 'Writing video' in x:
+                self.progress_bar.setValue(0)
+                self.label.setText('Exporting')
+                self.first_step_done = True
+                self.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: pink;")
+            elif "video ready" in x:
+                self.progress_bar.setValue(100)
+                self.label.setText('Complete')
+
+    def bars_callback(self, bar, attr, value, old_value=None):
+        percentage = (value / self.bars[bar]['total']) * 100
+        self.progress_bar.setValue(int(percentage))
 
 
 class Card:
@@ -51,9 +80,9 @@ class Card:
         temp_font.setBold(False)
         self.description_preview.setFont(temp_font)
         if 'video' in self.video.type:
-            string_to_display = f'{self.ui.video.title}\nQuality: {self.video.resolution}\nFPS: {self.video.fps}'
+            string_to_display = f'{self.ui.video.title}\nQuality: {self.video.resolution}\nFPS: {self.video.fps}\nSize: {self.video.filesize_mb}MB'
         else:
-            string_to_display = f'{self.ui.video.title}\nQuality: {self.video.abr}\nType: Audio'
+            string_to_display = f'{self.ui.video.title}\nQuality: {self.video.abr}\nType: Audio\nSize: {self.video.filesize_mb}MB'
         self.description_preview.setText(string_to_display)
 
         self.media_row.addWidget(self.thumbnail_preview)
@@ -61,8 +90,13 @@ class Card:
 
         # Row 4 Downloading Status
         self.progress_bar_row = QHBoxLayout()
+
+        self.status_label = QLabel("Queued")
+
         self.progress_bar = QProgressBar()
         self.progress_bar.setMaximumHeight(20)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: green;}")
 
         self.delete_button = QPushButton()
         self.delete_button.setIcon(QIcon("./assets/icons/delete.png"))
@@ -71,10 +105,12 @@ class Card:
         self.delete_button.setStyleSheet("QPushButton::hover{background-color: red;}")
         self.delete_button.clicked.connect(self.initiate_delete_card)
 
+        self.time_remaining = QLabel('')
+
+        self.progress_bar_row.addWidget(self.status_label)
         self.progress_bar_row.addWidget(self.progress_bar)
         self.progress_bar_row.addWidget(self.delete_button)
-        self.progress_bar.setValue(0)
-        self.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: green;}")
+        self.progress_bar_row.addWidget(self.time_remaining)
 
         # Row 5 empty line
 
@@ -90,8 +126,10 @@ class Card:
         self.card.addLayout(self.progress_bar_row)
         self.card.addLayout(self.empty_line_row)
 
+        self.logger = MyBarLogger(self.progress_bar, self.status_label)
+
     def progress_func(self, video, file_path, remaining):
-        finished = int(((self.video.filesize - remaining)/self.video.filesize)*100)
+        finished = int(((self.video.filesize - remaining) / self.video.filesize) * 100)
         self.progress_bar.setValue(finished)
 
     def complete_func(self, a, b):

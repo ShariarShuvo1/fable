@@ -9,6 +9,7 @@ class VideoDownloadThread(QtCore.QThread):
         self.window.downloading = True
 
     def run(self):
+        self.card.status_label.setText('Fetching Data')
         video_object = YouTube(self.card.url, on_progress_callback=self.card.progress_func, on_complete_callback=self.card.complete_func)
         video = video_object.streams.get_by_itag(self.card.itag)
         self.card.video = video
@@ -31,8 +32,10 @@ class VideoDownloadThread(QtCore.QThread):
                 extension = 'mp3'
             abr = '_' + video.abr
             title = t + abr + p + f'.{extension}'
+        if video.type == 'audio':
+            self.card.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: red;}")
+        self.card.status_label.setText('Downloading Video')
         video.download(filename=title)
-        print('braaa')
+        self.card.status_label.setText('Complete')
         self.window.downloading = False
         self.window.queue_process()
-        print('done')

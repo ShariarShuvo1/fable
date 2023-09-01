@@ -54,7 +54,7 @@ class VideoInfoThread(QtCore.QThread):
             elif obj.source.is_progressive:
                 self.window.resolution_list.setItemIcon(idx, QIcon('assets/icons/video-audio.png'))
             else:
-                if obj.nvidia_available:
+                if obj.nvidia_available and 'mp4' in obj.source.mime_type:
                     self.window.resolution_list.setItemIcon(idx, QIcon('assets/icons/nvidia.png'))
                 else:
                     self.window.resolution_list.setItemIcon(idx, QIcon('assets/icons/video.png'))

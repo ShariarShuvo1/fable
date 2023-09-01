@@ -161,6 +161,7 @@ class Ui_youtubeDownloader(object):
 
     def download(self, card: Card):
         card.description_preview.setEnabled(True)
+        card.status_label.setText('Downloading')
         if card.is_progressive or card.video_type in 'audio':
             self.video_download_thread = VideoDownloadThread()
             self.video_download_thread.set_values(card, self)
@@ -171,13 +172,16 @@ class Ui_youtubeDownloader(object):
             self.dual_download_thread.start()
 
     def download_clicked(self):
-        self.cards.append(Card(self, self.url, self.resolution_dict[self.resolution_list.currentText()].source))
-        last_card = self.cards[-1]
-        last_card.description_preview.setDisabled(True)
-        self.card_list.insertLayout(0, last_card.card)
-        self.queue.append(last_card)
-        if not self.downloading:
-            self.queue_process()
+        txt = self.resolution_list.currentText()
+        if len(txt) > 5:
+            self.cards.append(Card(self, self.url, self.resolution_dict[txt].source))
+            last_card = self.cards[-1]
+            last_card.description_preview.setDisabled(True)
+            last_card.delete_button.setDisabled(True)
+            self.card_list.insertLayout(0, last_card.card)
+            self.queue.append(last_card)
+            if not self.downloading:
+                self.queue_process()
 
     def delete_card(self, card, obj):
         if len(self.cards) > 1 and obj.download_button.text() == 'Downloaded':

@@ -3,6 +3,8 @@ import subprocess
 
 import moviepy.editor as VideoEditor
 from PyQt6 import QtCore
+from proglog import proglog
+
 from pytube.__main__ import YouTube
 
 
@@ -41,6 +43,7 @@ class DualDownloadThread(QtCore.QThread):
         self.window.downloading = True
 
     def run(self):
+        self.card.status_label.setText('Fetching Data')
         video_object = YouTube(self.card.url, on_progress_callback=self.card.progress_func,
                                on_complete_callback=self.card.complete_func)
         self.video = video_object.streams.get_by_itag(self.card.itag)
@@ -48,7 +51,9 @@ class DualDownloadThread(QtCore.QThread):
         video_title, video_extension = get_title(video_object, self.video)
         history_remover('video', video_extension)
 
+        self.card.status_label.setText('Downloading Video')
         video_path = self.video.download()
+        self.card.status_label.setText('Video Downloaded')
         os.rename(video_path, f'video.{video_extension}')
 
         self.card.progress_bar.setValue(0)
@@ -60,14 +65,16 @@ class DualDownloadThread(QtCore.QThread):
         for music in audio_list:
             if music.mime_type == "audio/mp4":
                 rate = int(music.abr.split('kbps')[0])
-                if rate > x:
+                if rate >= x:
                     x = rate
                     audio = music
         self.card.video = audio
         audio_title, audio_extension = get_title(video_object, audio)
         history_remover('audio', audio_extension)
 
+        self.card.status_label.setText('Downloading Audio')
         audio_path = audio.download()
+        self.card.status_label.setText('Audio Downloaded')
         os.rename(audio_path, f'audio.{audio_extension}')
 
         video = VideoEditor.VideoFileClip(f'video.{video_extension}')
@@ -77,7 +84,10 @@ class DualDownloadThread(QtCore.QThread):
         final = video.set_audio(audio)
         path = f'{video_title}_edited.{video_extension}'
 
-        final.write_videofile(path)
+        self.card.progress_bar.setValue(0)
+        self.card.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: yellow;")
+
+        final.write_videofile(path, logger=self.card.logger)
 
         history_remover('video', video_extension)
         history_remover('audio', audio_extension)
