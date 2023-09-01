@@ -10,7 +10,8 @@ class Downloader(QtCore.QThread):
         while len(self.window.queue) != 0:
             if self.window.queue[0].download_complete:
                 self.window.queue.pop(0)
-            elif not self.window.downloading:
+                continue
+            if not self.window.downloading:
                 card = self.window.queue[0]
                 self.window.download(card)
         self.window.queue_processing = False

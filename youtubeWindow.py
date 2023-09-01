@@ -160,6 +160,7 @@ class Ui_youtubeDownloader(object):
 
     def download(self, card: Card):
         card.description_preview.setEnabled(True)
+        card.progress_bar.resetFormat()
         card.progress_bar.setFormat('Downloading')
         if card.is_progressive or card.video_type in 'audio':
             self.video_download_thread = VideoDownloadThread()

@@ -29,6 +29,17 @@ def get_title(video_object, video):
     return title, extension
 
 
+def history_remover():
+    if os.path.exists('video.mp4'):
+        os.remove('video.mp4')
+    if os.path.exists('video.webm'):
+        os.remove('video.webm')
+    if os.path.exists('audio.mp3'):
+        os.remove('audio.mp3')
+    if os.path.exists('audio.webm'):
+        os.remove('audio.webm')
+
+
 class DualDownloadThread(QtCore.QThread):
     def set_values(self, card, window):
         self.window = window
@@ -36,14 +47,16 @@ class DualDownloadThread(QtCore.QThread):
         self.window.downloading = True
 
     def run(self):
-        video_object = YouTube(self.card.url, on_progress_callback=self.card.progress_func, on_complete_callback=self.card.complete_func)
-        video = video_object.streams.get_by_itag(self.card.itag)
-        self.video = video
-        video_title, video_extension = get_title(video_object, video)
+        history_remover()
+        video_object = YouTube(self.card.url, on_progress_callback=self.card.progress_func,
+                               on_complete_callback=self.card.complete_func)
+        self.video = video_object.streams.get_by_itag(self.card.itag)
+        self.card.video = self.video
+        video_title, video_extension = get_title(video_object, self.video)
 
         self.card.progress_bar.resetFormat()
 
-        video_path = video.download()
+        video_path = self.video.download()
         if 'mp4' in video_extension:
             os.rename(video_path, 'video.mp4')
         else:
@@ -62,7 +75,7 @@ class DualDownloadThread(QtCore.QThread):
                 if rate > x:
                     x = rate
                     audio = music
-        self.video = audio
+        self.card.video = audio
 
         audio_title, audio_extension = get_title(video_object, audio)
 
@@ -82,10 +95,7 @@ class DualDownloadThread(QtCore.QThread):
         else:
             video = VideoEditor.VideoFileClip('video.webm')
 
-        if 'mp3' in audio_extension:
-            audio = VideoEditor.AudioFileClip('audio.mp3')
-        else:
-            audio = VideoEditor.AudioFileClip('audio.webm')
+        audio = VideoEditor.AudioFileClip('audio.mp3')
 
         final = video.set_audio(audio)
         if 'mp4' in self.card.video_path:
@@ -93,18 +103,11 @@ class DualDownloadThread(QtCore.QThread):
         else:
             path = f'{video_title}_edited.webm'
 
-        if nvidia_available:
-            final.write_videofile(path, codec="h264_nvenc", threads=8)
+        if nvidia_available and 'webm' not in self.video.mime_type:
+            final.write_videofile(path, codec="hevc_nvenc", threads=16)
         else:
             final.write_videofile(path)
 
-        if os.path.exists('video.mp4'):
-            os.remove('video.mp4')
-        if os.path.exists('video.webm'):
-            os.remove('video.webm')
-        if os.path.exists('audio.mp3'):
-            os.remove('audio.mp3')
-        if os.path.exists('audio.webm'):
-            os.remove('audio.webm')
+        history_remover()
         self.card.download_complete = True
         self.window.downloading = False
