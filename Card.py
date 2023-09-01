@@ -1,15 +1,6 @@
-import requests
-import moviepy.editor as VideoEditor
-import subprocess
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QPixmap, QFont, QCursor, QMovie, QIcon
-from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QProgressBar
+from PyQt6.QtGui import QFont, QIcon
+from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QProgressBar
 from proglog import ProgressBarLogger
-
-from pytube.__main__ import YouTube
-from VideoInfoThread import VideoInfoThread
-from VideoDownloadThread import VideoDownloadThread
-from DualDownloadThread import DualDownloadThread
 
 
 class MyBarLogger(ProgressBarLogger):
@@ -99,12 +90,9 @@ class Card:
         self.delete_button.setStyleSheet("QPushButton::hover{background-color: red;}")
         self.delete_button.clicked.connect(self.initiate_delete_card)
 
-        self.time_remaining = QLabel('')
-
         self.progress_bar_row.addWidget(self.status_label)
         self.progress_bar_row.addWidget(self.progress_bar)
         self.progress_bar_row.addWidget(self.delete_button)
-        self.progress_bar_row.addWidget(self.time_remaining)
 
         # Row 5 empty line
 

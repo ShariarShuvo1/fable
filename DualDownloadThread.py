@@ -1,12 +1,9 @@
 import os
 import multiprocessing
-import subprocess
-
-import moviepy.editor as VideoEditor
-from PyQt6 import QtCore
+import moviepy.editor as video_editor
 from re import sub as remove_space
-
 from pytube.__main__ import YouTube
+from PyQt6 import QtCore
 
 
 def get_title(video_object, video):
@@ -77,18 +74,18 @@ class DualDownloadThread(QtCore.QThread):
         self.card.status_label.setText('Audio Downloaded')
         os.rename(audio_path, f'audio.{audio_extension}')
 
-        video = VideoEditor.VideoFileClip(f'video.{video_extension}')
+        video = video_editor.VideoFileClip(f'video.{video_extension}')
 
-        audio = VideoEditor.AudioFileClip(f'audio.{audio_extension}')
+        audio = video_editor.AudioFileClip(f'audio.{audio_extension}')
 
         final = video.set_audio(audio)
         path = f'{video_title}_edited.{video_extension}'
         self.card.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: #FFFF00;}")
+        self.card.status_label.setText('Mixing Files')
         try:
             final.write_videofile(path, logger=self.card.logger, threads= thread, codec='h264_nvenc')
         except:
             final.write_videofile(path, logger=self.card.logger)
-
         history_remover('video', video_extension)
         history_remover('audio', audio_extension)
         self.window.downloading = False

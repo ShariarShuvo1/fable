@@ -1,18 +1,17 @@
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QPixmap, QFont, QCursor, QMovie
-from copy import deepcopy
-from PyQt6.QtWidgets import QScrollArea, QWidget, QGroupBox, QFormLayout, QPushButton, QHBoxLayout, QLineEdit, \
-    QVBoxLayout, QGridLayout, QLabel, QComboBox, QProgressBar
 from Card import Card
 from pytube.__main__ import YouTube
 from VideoInfoThread import VideoInfoThread
 from VideoDownloadThread import VideoDownloadThread
 from DualDownloadThread import DualDownloadThread
+from PyQt6 import QtCore, QtWidgets
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QPixmap, QFont, QCursor, QMovie
+from PyQt6.QtWidgets import QScrollArea, QGroupBox, QPushButton, QHBoxLayout, QLineEdit, QVBoxLayout, QLabel, QComboBox
 
 
 class Ui_youtubeDownloader(object):
     def __init__(self):
+        self.back_button = None
         self.dual_download_thread = None
         self.downloader_thread = None
         self.queue_processing = False
@@ -67,6 +66,12 @@ class Ui_youtubeDownloader(object):
         w = 1200 // 100
         h = 900 // 100
 
+        # Back Button
+        self.back_button = QPushButton('<--BACK')
+        self.back_button.setFont(font)
+        self.back_button.setMaximumWidth(w*10)
+        self.back_button.clicked.connect(self.back_button_clicked)
+
         # Row 1 input
         self.download_row = QHBoxLayout()
         self.url_label = QLabel("URL: ")
@@ -117,6 +122,7 @@ class Ui_youtubeDownloader(object):
         self.media_row.addWidget(self.thumbnail_preview)
         self.media_row.addWidget(self.description_preview)
 
+        self.body.addWidget(self.back_button)
         self.body.addLayout(self.download_row)
         self.body.addLayout(self.resolution_row)
         self.body.addLayout(self.media_row)
@@ -132,6 +138,10 @@ class Ui_youtubeDownloader(object):
         self.scroll_bar.setWidgetResizable(True)
         self.YoutubeWindow.setCentralWidget(self.scroll_bar)
         QtCore.QMetaObject.connectSlotsByName(self.YoutubeWindow)
+
+    def back_button_clicked(self):
+        self.YoutubeWindow.hide()
+        self.MainWindow.show()
 
     def text_changed(self):
         self.description_preview.clear()
