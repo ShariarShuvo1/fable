@@ -137,6 +137,7 @@ class Ui_youtubeDownloader(object):
     def text_changed(self):
         self.description_preview.clear()
         self.thumbnail_preview.setPixmap(QPixmap('./assets/dummy_thumbnail.png').scaledToHeight(150))
+        self.resolution_list.clear()
         self.download_button.setDisabled(True)
         self.resolution_list.setDisabled(True)
         self.video = None
@@ -154,14 +155,12 @@ class Ui_youtubeDownloader(object):
 
     def queue_process(self):
         if len(self.queue) > 0:
-            self.downloader_thread = Downloader()
-            self.downloader_thread.set_values(self)
-            self.downloader_thread.start()
+            self.downloading = True
+            card = self.queue.pop(0)
+            self.download(card)
 
     def download(self, card: Card):
         card.description_preview.setEnabled(True)
-        card.progress_bar.resetFormat()
-        card.progress_bar.setFormat('Downloading')
         if card.is_progressive or card.video_type in 'audio':
             self.video_download_thread = VideoDownloadThread()
             self.video_download_thread.set_values(card, self)
@@ -175,11 +174,9 @@ class Ui_youtubeDownloader(object):
         self.cards.append(Card(self, self.url, self.resolution_dict[self.resolution_list.currentText()].source))
         last_card = self.cards[-1]
         last_card.description_preview.setDisabled(True)
-        last_card.progress_bar.resetFormat()
-        last_card.progress_bar.setFormat('Queued')
         self.card_list.insertLayout(0, last_card.card)
         self.queue.append(last_card)
-        if not self.downloading and not self.queue_processing:
+        if not self.downloading:
             self.queue_process()
 
     def delete_card(self, card, obj):

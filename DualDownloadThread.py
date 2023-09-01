@@ -20,24 +20,18 @@ def get_title(video_object, video):
 
         res = '_' + str(video.resolution)
         fps = '_' + str(video.fps) + 'fps'
-        title = t + fps + res + p + f'.{extension}'
+        title = t + fps + res + p
     else:
         if extension == 'mp4':
             extension = 'mp3'
         abr = '_' + video.abr
-        title = t + abr + p + f'.{extension}'
+        title = t + abr + p
     return title, extension
 
 
-def history_remover():
-    if os.path.exists('video.mp4'):
-        os.remove('video.mp4')
-    if os.path.exists('video.webm'):
-        os.remove('video.webm')
-    if os.path.exists('audio.mp3'):
-        os.remove('audio.mp3')
-    if os.path.exists('audio.webm'):
-        os.remove('audio.webm')
+def history_remover(name, extension):
+    if os.path.exists(f'{name}.{extension}'):
+        os.remove(f'{name}.{extension}')
 
 
 class DualDownloadThread(QtCore.QThread):
@@ -47,23 +41,17 @@ class DualDownloadThread(QtCore.QThread):
         self.window.downloading = True
 
     def run(self):
-        history_remover()
         video_object = YouTube(self.card.url, on_progress_callback=self.card.progress_func,
                                on_complete_callback=self.card.complete_func)
         self.video = video_object.streams.get_by_itag(self.card.itag)
         self.card.video = self.video
         video_title, video_extension = get_title(video_object, self.video)
-
-        self.card.progress_bar.resetFormat()
+        history_remover('video', video_extension)
 
         video_path = self.video.download()
-        if 'mp4' in video_extension:
-            os.rename(video_path, 'video.mp4')
-        else:
-            os.rename(video_path, 'video.webm')
+        os.rename(video_path, f'video.{video_extension}')
 
         self.card.progress_bar.setValue(0)
-        self.card.progress_bar.resetFormat()
         self.card.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: red;}")
 
         audio_list = video_object.streams.filter(only_audio=True)
@@ -76,38 +64,22 @@ class DualDownloadThread(QtCore.QThread):
                     x = rate
                     audio = music
         self.card.video = audio
-
         audio_title, audio_extension = get_title(video_object, audio)
+        history_remover('audio', audio_extension)
 
         audio_path = audio.download()
-        if 'mp3' in audio_extension:
-            os.rename(audio_path, 'audio.mp3')
-        else:
-            os.rename(audio_path, 'audio.webm')
+        os.rename(audio_path, f'audio.{audio_extension}')
 
-        try:
-            subprocess.check_output('nvidia-smi')
-            nvidia_available = True
-        except Exception:
-            nvidia_available = False
-        if 'mp4' in video_extension:
-            video = VideoEditor.VideoFileClip('video.mp4')
-        else:
-            video = VideoEditor.VideoFileClip('video.webm')
+        video = VideoEditor.VideoFileClip(f'video.{video_extension}')
 
-        audio = VideoEditor.AudioFileClip('audio.mp3')
+        audio = VideoEditor.AudioFileClip(f'audio.{audio_extension}')
 
         final = video.set_audio(audio)
-        if 'mp4' in self.card.video_path:
-            path = f'{video_title}_edited.mp4'
-        else:
-            path = f'{video_title}_edited.webm'
+        path = f'{video_title}_edited.{video_extension}'
 
-        if nvidia_available and 'webm' not in self.video.mime_type:
-            final.write_videofile(path, codec="hevc_nvenc", threads=16)
-        else:
-            final.write_videofile(path)
+        final.write_videofile(path)
 
-        history_remover()
-        self.card.download_complete = True
+        history_remover('video', video_extension)
+        history_remover('audio', audio_extension)
         self.window.downloading = False
+        self.window.queue_process()

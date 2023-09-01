@@ -11,7 +11,7 @@ class VideoDownloadThread(QtCore.QThread):
     def run(self):
         video_object = YouTube(self.card.url, on_progress_callback=self.card.progress_func, on_complete_callback=self.card.complete_func)
         video = video_object.streams.get_by_itag(self.card.itag)
-        self.video = video
+        self.card.video = video
         extension = video.mime_type.split('/')[1]
         t = ""
         for char in video_object.title:
@@ -31,7 +31,8 @@ class VideoDownloadThread(QtCore.QThread):
                 extension = 'mp3'
             abr = '_' + video.abr
             title = t + abr + p + f'.{extension}'
-        self.card.progress_bar.resetFormat()
         video.download(filename=title)
-        self.card.download_complete = True
+        print('braaa')
         self.window.downloading = False
+        self.window.queue_process()
+        print('done')

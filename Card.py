@@ -73,6 +73,8 @@ class Card:
 
         self.progress_bar_row.addWidget(self.progress_bar)
         self.progress_bar_row.addWidget(self.delete_button)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: green;}")
 
         # Row 5 empty line
 
@@ -94,7 +96,6 @@ class Card:
 
     def complete_func(self, a, b):
         self.progress_bar.setValue(100)
-        self.progress_bar.setFormat('Complete')
 
     def initiate_delete_card(self):
         self.ui.delete_card(self.card, self)
