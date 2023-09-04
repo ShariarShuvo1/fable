@@ -6,6 +6,8 @@ class ResolutionObject:
         self.source = source
         self.tag = tag
         self.video_type = video_type
+        if self.video_type.split('/')[1] == 'mp4' and fps == 'Audio':
+            self.video_type = self.video_type.split('/')[0] + '/mp3'
         self.resolution = resolution
         self.size = size
         self.fps = fps
