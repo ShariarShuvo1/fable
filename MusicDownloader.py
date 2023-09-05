@@ -1,7 +1,7 @@
 import os
 from shutil import copyfileobj
 import requests
-from pydub import AudioSegment
+import moviepy.editor as video_editor
 from PyQt6 import QtCore
 from PyQt6.QtGui import QPixmap
 from DualDownloadThread import get_title
@@ -45,17 +45,18 @@ class MusicDownloader(QtCore.QThread):
 
             path = audio.download()
             downloaded_file_list.append(path)
-        self.card.title.setText(f'{title}\nDownload Complete\nTotal Size: {total_size} MB    Total Files: {total}')
-
-        final_audio = AudioSegment.empty()
+        self.card.title.setText('Mixing Audios')
+        final_audios = []
         for audio_path in downloaded_file_list:
-            current_audio = AudioSegment.from_file(audio_path)
-            final_audio += current_audio
-
+            final_audios.append(video_editor.AudioFileClip(audio_path))
+        final_audio = video_editor.concatenate_audioclips(final_audios)
         title, extension = get_title(video, audio)
+        path = f'{title}_edited.{extension}'
+        final_audio.write_audiofile(path, logger=self.card.logger)
 
-        final_audio.export(out_f=f'{title}_generated.mp3', format='mp3', cover='thumbnail.jpg')
-
+        if os.path.exists('./thumbnail.jpg'):
+            os.remove('./thumbnail.jpg')
         for audio_path in downloaded_file_list:
             if os.path.exists(audio_path):
                 os.remove(audio_path)
+        self.card.title.setText(f'{title}\nDownload Complete\nTotal Size: {total_size} MB    Total Files: {total}')

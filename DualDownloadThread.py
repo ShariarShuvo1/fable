@@ -83,7 +83,7 @@ class DualDownloadThread(QtCore.QThread):
         self.card.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: #FFFF00;}")
         self.card.status_label.setText('Mixing Files')
         try:
-            final.write_videofile(path, logger=self.card.logger, threads= thread, codec='h264_nvenc')
+            final.write_videofile(path, logger=self.card.logger, threads=thread, codec='h264_nvenc')
         except:
             final.write_videofile(path, logger=self.card.logger)
         history_remover('video', video_extension)

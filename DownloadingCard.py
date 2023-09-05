@@ -1,7 +1,24 @@
 from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QMovie, QIcon
 from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QProgressBar, QPushButton
+from proglog import ProgressBarLogger
+
 from MusicDownloader import MusicDownloader
+
+
+class MyBarLogger(ProgressBarLogger):
+
+    def __init__(self, progress_bar: QProgressBar):
+        super().__init__()
+        self.progress_bar: QProgressBar = progress_bar
+        self.first_step_done = False
+
+    def callback(self, **changes):
+        pass
+
+    def bars_callback(self, bar, attr, value, old_value=None):
+        percentage = (value / self.bars[bar]['total']) * 100
+        self.progress_bar.setValue(int(percentage))
 
 
 class DownloadingCard:
@@ -26,6 +43,7 @@ class DownloadingCard:
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setMaximumHeight(20)
+        self.logger = MyBarLogger(self.progress_bar)
 
         self.data_layout.addWidget(self.progress_bar)
         self.layout.addLayout(self.data_layout)
