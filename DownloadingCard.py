@@ -65,7 +65,7 @@ class DownloadingCard:
         self.downloader_thread.start()
 
     def delete_clicked(self):
-        pass
+        self.window.delete_card(self)
 
     def progress_func(self, video, file_path, remaining):
         finished = int(((self.filesize - remaining) / self.filesize) * 100)

@@ -60,3 +60,4 @@ class MusicDownloader(QtCore.QThread):
             if os.path.exists(audio_path):
                 os.remove(audio_path)
         self.card.title.setText(f'{title}\nDownload Complete\nTotal Size: {total_size} MB    Total Files: {total}')
+        self.card.delete_button.setDisabled(False)

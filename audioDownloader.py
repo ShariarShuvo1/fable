@@ -139,12 +139,25 @@ class Ui_audioDownloader(object):
             for element in self.current_list:
                 url_list.append(element.url)
             card = DownloadingCard(url_list, self)
-            self.downloading_list_viewer.addLayout(card.layout)
+            self.downloading_list_viewer.insertLayout(0, card.layout)
             self.downloading_list.append(card)
             for obj in self.current_list.copy():
                 self.delete_current_card(obj)
             self.edit_box.clear()
             self.current_list = []
+
+    def delete_card(self, obj: DownloadingCard):
+        obj.downloader_thread.terminate()
+        for i in reversed(range(obj.layout.count())):
+            item = obj.layout.itemAt(i)
+            if type(item) == PyQt6.QtWidgets.QVBoxLayout:
+                for k in reversed(range(item.count())):
+                    item.itemAt(k).widget().deleteLater()
+                obj.layout.removeItem(item)
+            else:
+                item.widget().deleteLater()
+        self.downloading_list_viewer.removeItem(obj.layout)
+        self.downloading_list.remove(obj)
 
 
 
