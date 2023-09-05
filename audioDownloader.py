@@ -129,6 +129,7 @@ class Ui_audioDownloader(object):
     def add_button_clicked(self):
         if len(self.edit_box.text()) > 10:
             card = CurrentCard(self, self.edit_box.text())
+            self.edit_box.clear()
             self.current_list_viewer.addLayout(card.layout)
             self.current_list.append(card)
             self.download_button.show()
@@ -158,9 +159,6 @@ class Ui_audioDownloader(object):
                 item.widget().deleteLater()
         self.downloading_list_viewer.removeItem(obj.layout)
         self.downloading_list.remove(obj)
-
-
-
 
     def back_button_clicked(self):
         self.MainWindow.show()
