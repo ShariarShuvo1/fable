@@ -27,6 +27,8 @@ class Ui_audioDownloader(object):
     def setupUi(self, audioDownloader, MainWindow):
         self.MainWindow = MainWindow
         self.audioDownloader = audioDownloader
+        audioDownloader.setWindowIcon(QtGui.QIcon('./assets/logo.png'))
+        audioDownloader.setWindowTitle("Fable [AUDIO]")
         self.audioDownloader.setFixedSize(1220, 900)
 
         self.group_layout = QGroupBox()

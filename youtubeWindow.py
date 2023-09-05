@@ -1,3 +1,5 @@
+from pyqt6_plugins.examplebuttonplugin import QtGui
+
 from Card import Card
 from pytube.__main__ import YouTube
 from VideoInfoThread import VideoInfoThread
@@ -51,6 +53,8 @@ class Ui_youtubeDownloader(object):
     def setupUi(self, YoutubeWindow, MainWindow):
         self.MainWindow = MainWindow
         self.YoutubeWindow = YoutubeWindow
+        YoutubeWindow.setWindowIcon(QtGui.QIcon('./assets/logo.png'))
+        YoutubeWindow.setWindowTitle("Fable [YouTube]")
         self.YoutubeWindow.setFixedSize(1220, 900)
 
         self.group_layout = QGroupBox()
