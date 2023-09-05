@@ -3,10 +3,12 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import QGroupBox, QPushButton, QVBoxLayout, QLabel, QScrollArea, QHBoxLayout, QLineEdit
 from CurrentCard import CurrentCard
+from DownloadingCard import DownloadingCard
 
 
 class Ui_audioDownloader(object):
     def __init__(self):
+        self.downloading_list: list[DownloadingCard] = list()
         self.current_list: list[CurrentCard] = list()
         self.download_button: QPushButton = None
         self.add_button: QPushButton = None
@@ -56,7 +58,6 @@ class Ui_audioDownloader(object):
         self.edit_box.setFont(font)
         self.edit_box.setClearButtonEnabled(True)
         self.edit_box.setPlaceholderText("Place your YouTube URL here")
-        # self.edit_box.textChanged.connect(self.text_changed)
 
         self.add_button = QPushButton('ADD')
         self.add_button.setFont(font)
@@ -76,6 +77,7 @@ class Ui_audioDownloader(object):
         self.download_button.setFont(font)
         self.download_button.setStyleSheet('background-color: ')
         self.download_button.setStyleSheet('background-color: #1be0af')
+        self.download_button.clicked.connect(self.download_button_clicked)
         self.download_button.hide()
 
         self.body.addLayout(self.current_list_viewer)
@@ -97,7 +99,7 @@ class Ui_audioDownloader(object):
 
     def delete_current_card(self, obj: CurrentCard):
         obj.video_thread.terminate()
-        for i in reversed(range(obj.layout.count())):  # 2
+        for i in reversed(range(obj.layout.count())):
             item = obj.layout.itemAt(i)
             if type(item) == PyQt6.QtWidgets.QHBoxLayout:
                 for j in reversed(range(item.count())):
@@ -111,11 +113,7 @@ class Ui_audioDownloader(object):
                 obj.layout.removeItem(item)
             else:
                 obj.layout.itemAt(i).widget().deleteLater()
-        for i in range(self.current_list_viewer.count()):
-            item = self.current_list_viewer.itemAt(i)
-            if item.layout() == obj.layout:
-                self.current_list_viewer.removeItem(obj.layout)
-                break
+        self.current_list_viewer.removeItem(obj.layout)
         self.current_list.remove(obj)
         if len(self.current_list) == 0:
             self.download_button.hide()
@@ -134,6 +132,22 @@ class Ui_audioDownloader(object):
             self.current_list_viewer.addLayout(card.layout)
             self.current_list.append(card)
             self.download_button.show()
+
+    def download_button_clicked(self):
+        if self.do_download():
+            url_list = []
+            for element in self.current_list:
+                url_list.append(element.url)
+            card = DownloadingCard(url_list, self)
+            self.downloading_list_viewer.addLayout(card.layout)
+            self.downloading_list.append(card)
+            for obj in self.current_list.copy():
+                self.delete_current_card(obj)
+            self.edit_box.clear()
+            self.current_list = []
+
+
+
 
     def back_button_clicked(self):
         self.MainWindow.show()
