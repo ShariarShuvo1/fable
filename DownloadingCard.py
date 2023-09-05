@@ -6,21 +6,6 @@ from proglog import ProgressBarLogger
 from MusicDownloader import MusicDownloader
 
 
-class MyBarLogger(ProgressBarLogger):
-
-    def __init__(self, progress_bar: QProgressBar):
-        super().__init__()
-        self.progress_bar: QProgressBar = progress_bar
-        self.first_step_done = False
-
-    def callback(self, **changes):
-        pass
-
-    def bars_callback(self, bar, attr, value, old_value=None):
-        percentage = (value / self.bars[bar]['total']) * 100
-        self.progress_bar.setValue(int(percentage))
-
-
 class DownloadingCard:
     def __init__(self, videos, window):
         self.downloader_thread: MusicDownloader = None
@@ -43,7 +28,6 @@ class DownloadingCard:
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setMaximumHeight(20)
-        self.logger = MyBarLogger(self.progress_bar)
 
         self.data_layout.addWidget(self.progress_bar)
         self.layout.addLayout(self.data_layout)
@@ -61,12 +45,12 @@ class DownloadingCard:
 
     def downloader(self):
         self.downloader_thread = MusicDownloader()
+        self.downloader_thread.progress_value.connect(self.progress_changed)
         self.downloader_thread.set_value(self)
         self.downloader_thread.start()
 
     def delete_clicked(self):
         self.window.delete_card(self)
 
-    def progress_func(self, video, file_path, remaining):
-        finished = int(((self.filesize - remaining) / self.filesize) * 100)
-        self.progress_bar.setValue(finished)
+    def progress_changed(self, value):
+        self.progress_bar.setValue(value)
