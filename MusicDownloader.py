@@ -36,7 +36,7 @@ class MusicDownloader(QtCore.QThread):
 
     def progress_func(self, video, file_path, remaining):
         finished = int(((self.filesize - remaining) / self.filesize) * 100)
-        self.progress_value.emit(finished)
+        self.update_value(finished)
 
     def run(self):
         self.logger = MyBarLogger(self)

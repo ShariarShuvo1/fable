@@ -1,8 +1,6 @@
 from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QMovie, QIcon
 from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QProgressBar, QPushButton
-from proglog import ProgressBarLogger
-
 from MusicDownloader import MusicDownloader
 
 

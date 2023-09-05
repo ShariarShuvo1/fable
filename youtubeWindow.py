@@ -170,19 +170,27 @@ class Ui_youtubeDownloader(object):
         if len(self.queue) > 0:
             self.downloading = True
             card = self.queue.pop(0)
-            self.download(card)
-
-    def download(self, card: Card):
-        card.description_preview.setEnabled(True)
-        card.status_label.setText('Downloading')
-        if card.is_progressive or card.video_type in 'audio':
-            self.video_download_thread = VideoDownloadThread()
-            self.video_download_thread.set_values(card, self)
-            self.video_download_thread.start()
-        else:
-            self.dual_download_thread = DualDownloadThread()
-            self.dual_download_thread.set_values(card, self)
-            self.dual_download_thread.start()
+            card.download()
+    #
+    # def download(self, card: Card):
+    #     card.description_preview.setEnabled(True)
+    #     card.status_label.setText('Downloading')
+    #     if card.is_progressive or card.video_type in 'audio':
+    #         self.video_download_thread = VideoDownloadThread()
+    #         self.video_download_thread.progress_value.connect(card.progress_changed)
+    #         self.video_download_thread.status_text.connect(card.change_status_label)
+    #         self.video_download_thread.style_sheet.connect(card.update_style_sheet)
+    #         self.video_download_thread.do_toggle.connect(card.toggle_delete_button_disable)
+    #         self.video_download_thread.set_values(card, self)
+    #         self.video_download_thread.start()
+    #     else:
+    #         self.dual_download_thread = DualDownloadThread()
+    #         self.dual_download_thread.progress_value.connect(card.progress_changed)
+    #         self.dual_download_thread.status_text.connect(card.change_status_label)
+    #         self.dual_download_thread.style_sheet.connect(card.update_style_sheet)
+    #         self.dual_download_thread.do_toggle.connect(card.toggle_delete_button_disable)
+    #         self.dual_download_thread.set_values(card, self)
+    #         self.dual_download_thread.start()
 
     def download_clicked(self):
         txt = self.resolution_list.currentText()

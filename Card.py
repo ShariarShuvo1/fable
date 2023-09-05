@@ -2,32 +2,14 @@ from PyQt6.QtGui import QFont, QIcon
 from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QProgressBar
 from proglog import ProgressBarLogger
 
-
-class MyBarLogger(ProgressBarLogger):
-
-    def __init__(self, progress_bar: QProgressBar, label: QLabel):
-        super().__init__()
-        self.progress_bar: QProgressBar = progress_bar
-        self.label: QLabel = label
-        self.first_step_done = False
-
-    def callback(self, **changes):
-        if not self.first_step_done and self.label.text() == 'Audio Downloaded':
-            self.label.setText('Mixing files')
-        for (parameter, value) in changes.items():
-            x = 'Parameter %s is now %s' % (parameter, value)
-            if 'Writing video' in x:
-                self.label.setText('Exporting Video')
-                self.first_step_done = True
-
-    def bars_callback(self, bar, attr, value, old_value=None):
-        percentage = (value / self.bars[bar]['total']) * 100
-        self.progress_bar.setValue(int(percentage))
+from DualDownloadThread import DualDownloadThread
+from VideoDownloadThread import VideoDownloadThread
 
 
 class Card:
 
     def __init__(self, ui, url, video):
+        self.dual_download_thread = None
         self.ui = ui
         self.url = url
         self.video = video
@@ -81,7 +63,7 @@ class Card:
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setMaximumHeight(20)
-        self.progress_bar.setStyleSheet("QProgressBar::chunk {background-color: green;}")
+        self.update_style_sheet("QProgressBar::chunk {background-color: green;}")
 
         self.delete_button = QPushButton()
         self.delete_button.setIcon(QIcon("./assets/icons/delete.png"))
@@ -108,11 +90,43 @@ class Card:
         self.card.addLayout(self.progress_bar_row)
         self.card.addLayout(self.empty_line_row)
 
-        self.logger = MyBarLogger(self.progress_bar, self.status_label)
-
-    def progress_func(self, video, file_path, remaining):
-        finished = int(((self.video.filesize - remaining) / self.video.filesize) * 100)
-        self.progress_bar.setValue(finished)
+    def progress_changed(self, value):
+        self.progress_bar.setValue(value)
 
     def initiate_delete_card(self):
         self.ui.delete_card(self.card, self)
+
+    def change_status_label(self, txt):
+        self.status_label.setText(txt)
+
+    def update_style_sheet(self, style_sheet):
+        self.progress_bar.setStyleSheet(style_sheet)
+
+    def toggle_delete_button_disable(self, do_toggle):
+        self.delete_button.setDisabled(do_toggle)
+
+    # def queue_process(self):
+    #     if len(self.ui.queue) > 0:
+    #         self.ui.downloading = True
+    #         card = self.ui.queue.pop(0)
+    #         card.download()
+
+    def download(self):
+        self.description_preview.setEnabled(True)
+        self.status_label.setText('Downloading')
+        if self.is_progressive or self.video_type in 'audio':
+            self.video_download_thread = VideoDownloadThread()
+            self.video_download_thread.progress_value.connect(self.progress_changed)
+            self.video_download_thread.status_text.connect(self.change_status_label)
+            self.video_download_thread.style_sheet.connect(self.update_style_sheet)
+            self.video_download_thread.do_toggle.connect(self.toggle_delete_button_disable)
+            self.video_download_thread.set_values(self, self.ui)
+            self.video_download_thread.start()
+        else:
+            self.dual_download_thread = DualDownloadThread()
+            self.dual_download_thread.progress_value.connect(self.progress_changed)
+            self.dual_download_thread.status_text.connect(self.change_status_label)
+            self.dual_download_thread.style_sheet.connect(self.update_style_sheet)
+            self.dual_download_thread.do_toggle.connect(self.toggle_delete_button_disable)
+            self.dual_download_thread.set_values(self, self.ui)
+            self.dual_download_thread.start()
