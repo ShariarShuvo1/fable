@@ -44,6 +44,10 @@ class DownloadingCard:
     def downloader(self):
         self.downloader_thread = MusicDownloader()
         self.downloader_thread.progress_value.connect(self.progress_changed)
+        self.downloader_thread.title_value.connect(self.update_title)
+        self.downloader_thread.do_toggle.connect(self.toggle_delete_button_disabled)
+        self.downloader_thread.thumbnail_value.connect(self.load_thumbnail)
+        self.downloader_thread.stylesheet.connect(self.update_progress_bar_stylesheet)
         self.downloader_thread.set_value(self)
         self.downloader_thread.start()
 
@@ -52,3 +56,15 @@ class DownloadingCard:
 
     def progress_changed(self, value):
         self.progress_bar.setValue(value)
+
+    def update_title(self, txt):
+        self.title.setText(txt)
+
+    def toggle_delete_button_disabled(self, do_toggle):
+        self.delete_button.setDisabled(do_toggle)
+
+    def load_thumbnail(self, thumbnail):
+        self.thumbnail_preview.setPixmap(thumbnail.scaledToHeight(73))
+
+    def update_progress_bar_stylesheet(self, stylesheet):
+        self.progress_bar.setStyleSheet(stylesheet)

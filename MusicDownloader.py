@@ -27,9 +27,25 @@ class MyBarLogger(ProgressBarLogger):
 
 class MusicDownloader(QtCore.QThread):
     progress_value = pyqtSignal(int)
+    title_value = pyqtSignal(str)
+    do_toggle = pyqtSignal(bool)
+    thumbnail_value = pyqtSignal(QPixmap)
+    stylesheet = pyqtSignal(str)
 
     def set_value(self, card):
         self.card = card
+
+    def update_title(self, txt):
+        self.title_value.emit(txt)
+
+    def update_stylesheet(self, style):
+        self.stylesheet.emit(style)
+
+    def update_thumbnail(self, thumbnail):
+        self.thumbnail_value.emit(thumbnail)
+
+    def toggle_disable_button(self, toggle):
+        self.do_toggle.emit(toggle)
 
     def update_value(self, value):
         self.progress_value.emit(value)
@@ -46,8 +62,23 @@ class MusicDownloader(QtCore.QThread):
         downloaded_file_list: list[str] = list()
         video = None
         audio = None
+        r = 5
+        g = 250
+        b = 5
         while len(self.card.videos) != 0:
-            self.card.title.setText('Loading...')
+            self.update_stylesheet(f"QProgressBar::chunk {'{'}background-color: rgb({r}, {g}, {b});{'}'}")
+            b = b + 30
+            if b >= 255:
+                b = 255
+                g -= 30
+                if g <= 5:
+                    r += 30
+                    if r >= 255:
+                        r = 5
+                        g = 250
+                        b = 5
+            self.update_value(0)
+            self.update_title('Loading...')
             url = self.card.videos.pop(0)
             video = YouTube(url, on_progress_callback=self.progress_func)
 
@@ -56,15 +87,19 @@ class MusicDownloader(QtCore.QThread):
             self.filesize = audio.filesize
 
             total_size += audio.filesize_mb
-            self.card.title.setText(f'[{total - len(self.card.videos)}/{total}]    Downloading: {video.title} - {audio.filesize_mb} MB')
-            self.card.thumbnail = QPixmap()
-            self.card.thumbnail.loadFromData(requests.get(video.thumbnail_url.replace('hq720.jpg', 'maxresdefault.jpg'), stream=True).content)
-            self.card.thumbnail_preview.setPixmap(self.card.thumbnail.scaledToHeight(73))
+            self.update_title(f'[{total - len(self.card.videos)}/{total}]    Downloading: {video.title} - {audio.filesize_mb} MB')
+            self.thumbnail = QPixmap()
+            picture = requests.get(video.thumbnail_url.replace('hq720.jpg', 'maxresdefault.jpg'), stream=True)
+            self.thumbnail.loadFromData(picture.content)
+            self.update_thumbnail(self.thumbnail)
 
             path = audio.download()
-            print(f'Downloaded : {path}')
+            self.update_value(100)
+            self.update_stylesheet("QProgressBar::chunk {background-color: red;}")
             downloaded_file_list.append(path)
-        self.card.title.setText('Mixing Audios')
+        self.update_title(f'{video.title}\nExporting Audio:')
+        self.update_value(0)
+        self.update_stylesheet("QProgressBar::chunk {background-color: #faea05;}")
         final_audios = []
         for audio_path in downloaded_file_list:
             final_audios.append(video_editor.AudioFileClip(audio_path))
@@ -76,6 +111,7 @@ class MusicDownloader(QtCore.QThread):
         for audio_path in downloaded_file_list:
             if os.path.exists(audio_path):
                 os.remove(audio_path)
-        self.card.title.setText(f'{title}\nDownload Complete\nTotal Size: {total_size} MB    Total Files: {total}')
-        self.card.delete_button.setDisabled(False)
-        print(f'--------------------{title} Complete--------------------------')
+        self.update_title(f'{title}\nTotal Size: {total_size} MB    Total Files: {total}\nDownload Complete')
+        self.toggle_disable_button(False)
+        self.update_value(100)
+        self.update_stylesheet("QProgressBar::chunk {background-color: blue;}")
