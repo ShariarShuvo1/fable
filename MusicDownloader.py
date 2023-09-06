@@ -1,5 +1,8 @@
 import os
+import shutil
+
 import requests
+import eyed3
 import moviepy.editor as video_editor
 from PyQt6 import QtCore
 from PyQt6.QtCore import pyqtSignal
@@ -62,9 +65,11 @@ class MusicDownloader(QtCore.QThread):
         downloaded_file_list: list[str] = list()
         video = None
         audio = None
+        self.picture = None
         r = 5
         g = 250
         b = 5
+        description = ""
         while len(self.card.videos) != 0:
             self.update_stylesheet(f"QProgressBar::chunk {'{'}background-color: rgb({r}, {g}, {b});{'}'}")
             b = b + 30
@@ -81,6 +86,7 @@ class MusicDownloader(QtCore.QThread):
             self.update_title('Loading...')
             url = self.card.videos.pop(0)
             video = YouTube(url, on_progress_callback=self.progress_func)
+            description += f'{video.title}\n'
 
             # Determine best Audio
             audio = video.streams.filter(only_audio=True).get_audio_only()
@@ -89,8 +95,9 @@ class MusicDownloader(QtCore.QThread):
             total_size += audio.filesize_mb
             self.update_title(f'[{total - len(self.card.videos)}/{total}]    Downloading: {video.title} - {audio.filesize_mb} MB')
             self.thumbnail = QPixmap()
-            picture = requests.get(video.thumbnail_url.replace('hq720.jpg', 'maxresdefault.jpg'), stream=True)
-            self.thumbnail.loadFromData(picture.content)
+            self.thumbnail_url = video.thumbnail_url.replace('hq720.jpg', 'maxresdefault.jpg')
+            self.picture = requests.get(self.thumbnail_url, stream=True)
+            self.thumbnail.loadFromData(self.picture.content)
             self.update_thumbnail(self.thumbnail)
 
             path = audio.download()
@@ -111,7 +118,22 @@ class MusicDownloader(QtCore.QThread):
         for audio_path in downloaded_file_list:
             if os.path.exists(audio_path):
                 os.remove(audio_path)
-        self.update_title(f'{title}\nTotal Size: {total_size} MB    Total Files: {total}\nDownload Complete')
+        self.update_title(f'{video.title}\nTotal Size: {total_size} MB    Total Files: {total}\nDownload Complete')
+
+        f = open(f'thumb.jpg', 'wb')
+        res = requests.get(self.thumbnail_url, stream=True)
+        shutil.copyfileobj(res.raw, f)
+        f.close()
+
+        audio_file = eyed3.load(path)
+        audio_file.tag.title = f'{video.title}_title'
+        audio_file.tag.artist = f'{video.author}'
+        audio_file.tag.images.set(3, open(f'thumb.jpg', 'rb').read(), 'image/jpeg')
+        audio_file.tag.save()
+
+        if os.path.exists(f'thumb.jpg'):
+            os.remove(f'thumb.jpg')
+
         self.toggle_disable_button(False)
         self.update_value(100)
         self.update_stylesheet("QProgressBar::chunk {background-color: blue;}")
