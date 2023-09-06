@@ -120,7 +120,7 @@ class MusicDownloader(QtCore.QThread):
                 os.remove(audio_path)
         self.update_title(f'{video.title}\nTotal Size: {total_size} MB    Total Files: {total}\nDownload Complete')
 
-        f = open(f'thumb.jpg', 'wb')
+        f = open(f'{title}_thumb.jpg', 'wb')
         res = requests.get(self.thumbnail_url, stream=True)
         shutil.copyfileobj(res.raw, f)
         f.close()
@@ -128,11 +128,11 @@ class MusicDownloader(QtCore.QThread):
         audio_file = eyed3.load(path)
         audio_file.tag.title = f'{video.title}_title'
         audio_file.tag.artist = f'{video.author}'
-        audio_file.tag.images.set(3, open(f'thumb.jpg', 'rb').read(), 'image/jpeg')
+        audio_file.tag.images.set(3, open(f'{title}_thumb.jpg', 'rb').read(), 'image/jpeg')
         audio_file.tag.save()
 
-        if os.path.exists(f'thumb.jpg'):
-            os.remove(f'thumb.jpg')
+        if os.path.exists(f'{title}_thumb.jpg'):
+            os.remove(f'{title}_thumb.jpg')
 
         self.toggle_disable_button(False)
         self.update_value(100)
