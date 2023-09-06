@@ -55,9 +55,9 @@ def get_title(video_object, video):
     return title, extension
 
 
-def history_remover(name, extension):
-    if os.path.exists(f'{name}.{extension}'):
-        os.remove(f'{name}.{extension}')
+def history_remover(name):
+    if os.path.exists(name):
+        os.remove(name)
 
 
 class DualDownloadThread(QtCore.QThread):
@@ -66,10 +66,8 @@ class DualDownloadThread(QtCore.QThread):
     style_sheet = pyqtSignal(str)
     do_toggle = pyqtSignal(bool)
 
-    def set_values(self, card, window):
-        self.window = window
+    def set_values(self, card):
         self.card = card
-        self.window.downloading = True
 
     def toggle_delete_button(self, toggle):
         self.do_toggle.emit(toggle)
@@ -96,30 +94,41 @@ class DualDownloadThread(QtCore.QThread):
         video_youtube = video_object.streams.get_by_itag(self.card.itag)
         self.card.video = video_youtube
         video_title, video_extension = get_title(video_object, video_youtube)
-        history_remover('video', video_extension)
 
         self.update_status_text('Downloading Video')
         self.filesize = video_youtube.filesize
         video_path = video_youtube.download()
+        video_path_temp = ''
+        if 'mp4' in video_youtube.mime_type:
+            video_path_temp = video_path[:len(video_path)-4] + f'_{video_youtube.itag}_video.mp4'
+        elif 'webm' in video_youtube.mime_type:
+            video_path_temp = video_path[:len(video_path)-5] + f'_{video_youtube.itag}_video.webm'
+        elif '3gpp' in video_youtube.mime_type:
+            video_path_temp = video_path[:len(video_path)-5] + f'_{video_youtube.itag}_video.3gpp'
+        os.rename(video_path, video_path_temp)
+        video_path = video_path_temp
         self.update_status_text('Video Downloaded')
-        os.rename(video_path, f'video.{video_extension}')
 
         audio = video_object.streams.filter(only_audio=True).get_audio_only()
         self.filesize = audio.filesize
         pytube_request.default_range_size = 209715
         self.card.video = audio
-        audio_title, audio_extension = get_title(video_object, audio)
-        history_remover('audio', audio_extension)
 
         self.update_status_text('Downloading Audio')
         self.update_style_sheet("QProgressBar::chunk {background-color: red;}")
         audio_path = audio.download()
+        audio_path_temp = audio_path[:len(audio_path)-4] + f'_{audio.itag}_audio.mp4'
+        os.rename(audio_path, audio_path_temp)
+        audio_path = audio_path_temp
+
         self.update_status_text('Audio Downloaded')
-        os.rename(audio_path, f'audio.{audio_extension}')
 
-        video = video_editor.VideoFileClip(f'video.{video_extension}')
+        print(video_path)
+        print(audio_path)
 
-        audio = video_editor.AudioFileClip(f'audio.{audio_extension}')
+        video = video_editor.VideoFileClip(video_path)
+
+        audio = video_editor.AudioFileClip(audio_path)
 
         final = video.set_audio(audio)
         path = f'{video_title}_edited.{video_extension}'
@@ -130,10 +139,8 @@ class DualDownloadThread(QtCore.QThread):
             final.write_videofile(path, logger=self.card.logger, threads=thread, codec='h264_nvenc')
         except:
             final.write_videofile(path, logger=self.logger)
-        history_remover('video', video_extension)
-        history_remover('audio', audio_extension)
-        self.window.downloading = False
+        history_remover(video_path)
+        history_remover(audio_path)
         self.update_style_sheet("QProgressBar::chunk {background-color: blue;}")
         self.toggle_delete_button(False)
         self.update_status_text('Download Complete')
-        self.window.queue_process()

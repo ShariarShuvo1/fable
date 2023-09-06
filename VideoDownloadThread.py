@@ -11,10 +11,8 @@ class VideoDownloadThread(QtCore.QThread):
     style_sheet = pyqtSignal(str)
     do_toggle = pyqtSignal(bool)
 
-    def set_values(self, card, window):
+    def set_values(self, card):
         self.card = card
-        self.window = window
-        self.window.downloading = True
 
     def toggle_delete_button(self, toggle):
         self.do_toggle.emit(toggle)
@@ -66,7 +64,5 @@ class VideoDownloadThread(QtCore.QThread):
         video.download(filename=title)
         self.update_value(100)
         self.update_status_text('Download Complete')
-        self.window.downloading = False
         self.update_style_sheet("QProgressBar::chunk {background-color: blue;}")
         self.toggle_delete_button(False)
-        self.window.queue_process()

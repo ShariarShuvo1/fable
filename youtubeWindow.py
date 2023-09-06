@@ -166,32 +166,6 @@ class Ui_youtubeDownloader(object):
             self.video_info_thread.set_values(self, self.url)
             self.video_info_thread.start()
 
-    def queue_process(self):
-        if len(self.queue) > 0:
-            self.downloading = True
-            card = self.queue.pop(0)
-            card.download()
-    #
-    # def download(self, card: Card):
-    #     card.description_preview.setEnabled(True)
-    #     card.status_label.setText('Downloading')
-    #     if card.is_progressive or card.video_type in 'audio':
-    #         self.video_download_thread = VideoDownloadThread()
-    #         self.video_download_thread.progress_value.connect(card.progress_changed)
-    #         self.video_download_thread.status_text.connect(card.change_status_label)
-    #         self.video_download_thread.style_sheet.connect(card.update_style_sheet)
-    #         self.video_download_thread.do_toggle.connect(card.toggle_delete_button_disable)
-    #         self.video_download_thread.set_values(card, self)
-    #         self.video_download_thread.start()
-    #     else:
-    #         self.dual_download_thread = DualDownloadThread()
-    #         self.dual_download_thread.progress_value.connect(card.progress_changed)
-    #         self.dual_download_thread.status_text.connect(card.change_status_label)
-    #         self.dual_download_thread.style_sheet.connect(card.update_style_sheet)
-    #         self.dual_download_thread.do_toggle.connect(card.toggle_delete_button_disable)
-    #         self.dual_download_thread.set_values(card, self)
-    #         self.dual_download_thread.start()
-
     def download_clicked(self):
         txt = self.resolution_list.currentText()
         if len(txt) > 5:
@@ -201,8 +175,7 @@ class Ui_youtubeDownloader(object):
             last_card.delete_button.setDisabled(True)
             self.card_list.insertLayout(0, last_card.card)
             self.queue.append(last_card)
-            if not self.downloading:
-                self.queue_process()
+            last_card.download()
 
     def delete_card(self, card, obj: Card):
         if obj.status_label.text() == 'Download Complete':

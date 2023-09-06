@@ -105,12 +105,6 @@ class Card:
     def toggle_delete_button_disable(self, do_toggle):
         self.delete_button.setDisabled(do_toggle)
 
-    # def queue_process(self):
-    #     if len(self.ui.queue) > 0:
-    #         self.ui.downloading = True
-    #         card = self.ui.queue.pop(0)
-    #         card.download()
-
     def download(self):
         self.description_preview.setEnabled(True)
         self.status_label.setText('Downloading')
@@ -120,7 +114,7 @@ class Card:
             self.video_download_thread.status_text.connect(self.change_status_label)
             self.video_download_thread.style_sheet.connect(self.update_style_sheet)
             self.video_download_thread.do_toggle.connect(self.toggle_delete_button_disable)
-            self.video_download_thread.set_values(self, self.ui)
+            self.video_download_thread.set_values(self)
             self.video_download_thread.start()
         else:
             self.dual_download_thread = DualDownloadThread()
@@ -128,5 +122,5 @@ class Card:
             self.dual_download_thread.status_text.connect(self.change_status_label)
             self.dual_download_thread.style_sheet.connect(self.update_style_sheet)
             self.dual_download_thread.do_toggle.connect(self.toggle_delete_button_disable)
-            self.dual_download_thread.set_values(self, self.ui)
+            self.dual_download_thread.set_values(self)
             self.dual_download_thread.start()
