@@ -19,7 +19,6 @@ def search_youtube(query, max_results=10, result_list=None):
         try:
             if 'youtube.com' in query or 'youtu.be' in query:
                 search_results = ydl.extract_info(query, download=False)
-                print(search_results)
             else:
                 search_results = ydl.extract_info(f"ytsearch{max_results}:{query}", download=False)
             if result_list is not None:

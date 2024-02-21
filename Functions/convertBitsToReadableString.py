@@ -1,4 +1,4 @@
-def convert_bits_to_readable_string(bits):
+def convert_bits_to_readable_string(bits) -> str:
     units = ['B', 'KB', 'MB', 'GB']
     index = 0
     while bits >= 1024 and index < len(units) - 1:

@@ -46,7 +46,7 @@ PROGRESS_BAR_STYLESHEET: str = """
         text-align: center;
         font-size: 14px;
         font-weight: bold;
-        color: darkslategray;
+        color: blue;
     }
 
     QProgressBar::chunk {
