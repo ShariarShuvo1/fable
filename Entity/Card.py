@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import QLabel, QVBoxLayout, QHBoxLayout, QProgressBar, QPus
 
 from Entity.File import File
 from Functions.convertBitsToReadableString import convert_bits_to_readable_string
+from Functions.format_time import format_time
 from Styles.DownloadListStyle import PROGRESS_BAR_STYLESHEET, TOOL_ICON_BUTTON_STYLESHEET, VIDEO_STATUS_STYLESHEET, \
     VIDEO_SIZE_STYLESHEET, VIDEO_TITLE_STYLESHEET
 from Consts.Constanats import DOWNLOAD_BOX_HEIGHT
@@ -22,6 +23,7 @@ def remove_inside_layout(layout):
 class Card:
     def __init__(self, video: File, currently_downloading_count: int):
         self.video: File = video
+        self.thread = DownloaderThread(video, self)
         self.currently_downloading_count: int = currently_downloading_count
 
         self.icon_size: QSize = QSize(30, 30)
@@ -68,12 +70,13 @@ class Card:
         self.pause_button.setIconSize(self.icon_size)
         self.pause_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
         self.pause_button.setCursor(PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
+        self.pause_button.clicked.connect(lambda: self.pause_download_video())
 
         self.play_button: QPushButton = QPushButton()
         self.play_button.setIcon(QIcon("./Assets/Icons/play-icon.png"))
         self.play_button.setIconSize(self.icon_size)
         self.play_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
-        self.play_button.clicked.connect(self.start_download)
+        self.play_button.clicked.connect(lambda: self.start_download())
         self.play_button.setCursor(PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
 
         self.datetime_label = QLabel(
@@ -89,15 +92,15 @@ class Card:
 
         self.file_size_label = QLabel(self.file_size)
         self.file_size_label.setStyleSheet(VIDEO_SIZE_STYLESHEET)
-        self.file_size_label.setFixedWidth(70)
+        self.file_size_label.setFixedWidth(130)
         self.file_size_label.setAlignment(PyQt6.QtCore.Qt.AlignmentFlag.AlignCenter)
 
-        self.speed_label = QLabel("0 KB/s")
+        self.speed_label = QLabel()
         self.speed_label.setStyleSheet(VIDEO_STATUS_STYLESHEET)
         self.speed_label.setFixedWidth(70)
         self.speed_label.setAlignment(PyQt6.QtCore.Qt.AlignmentFlag.AlignCenter)
 
-        self.eta_label = QLabel("0:00")
+        self.eta_label = QLabel()
         self.eta_label.setFixedWidth(70)
         self.eta_label.setStyleSheet(VIDEO_STATUS_STYLESHEET)
         self.eta_label.setAlignment(PyQt6.QtCore.Qt.AlignmentFlag.AlignCenter)
@@ -116,20 +119,54 @@ class Card:
         self.download_box: QWidget = QWidget()
         self.download_box.setFixedHeight(DOWNLOAD_BOX_HEIGHT)
 
-        self.thread = DownloaderThread(video)
         self.thread.progress_updated.connect(lambda progress=self.progress_bar: self.progress_bar.setValue(progress))
         self.thread.status_updated.connect(lambda status=video.status: self.download_finished(status))
+        self.thread.status.connect(lambda status: self.update_status(status))
+        self.thread.speed_updated.connect(lambda speed=self.speed_label: self.speed_label.setText(convert_bits_to_readable_string(speed) + "/s"))
+        self.thread.eta_updated.connect(lambda eta=self.eta_label: self.eta_label.setText(format_time(eta)))
+        self.thread.downloaded_size_updated.connect(lambda size: self.file_size_updated(size))
 
         self.construct_body()
+
+    def update_status(self, status):
+        if "Merg" in status:
+            self.pause_button.setToolTip("You can not pause EXPORTING")
+        self.status_label.setText(f"{status}")
+
+    def file_size_updated(self, size: list):
+        if size == ["", ""]:
+            self.file_size_label.setText(f"N/A")
+        else:
+            downloaded_size = convert_bits_to_readable_string(size[0])
+            if self.video.file_size:
+                video_size = convert_bits_to_readable_string(size[1])
+            else:
+                video_size = "N/A"
+            self.file_size_label.setText(f"{downloaded_size}/{video_size}")
 
     def download_finished(self, status: str):
         self.video.status = status
+        if self.video.file_size:
+            self.file_size_label.setText(convert_bits_to_readable_string(self.video.file_size))
+        else:
+            self.file_size_label.setText("N/A")
         self.construct_body()
 
+    def pause_download_video(self):
+        if self.video.status == "Downloading":
+            self.video.status = "Paused"
+            self.construct_body()
+            self.thread.pause_download()
+
     def start_download(self):
-        self.video.status = "Downloading"
-        self.construct_body()
-        self.thread.start()
+        if self.video.status == "Queued":
+            self.video.status = "Downloading"
+            self.construct_body()
+            self.thread.start()
+        elif self.video.status == "Paused":
+            self.thread.resume_download()
+            self.video.status = "Downloading"
+            self.construct_body()
 
     def construct_body(self):
 
@@ -215,8 +252,8 @@ class Card:
         if self.video.status == "Paused":
             self.play_button.setHidden(False)
             self.progress_bar.setHidden(False)
-            self.speed_label.setHidden(False)
-            self.eta_label.setHidden(False)
+            self.speed_label.setHidden(True)
+            self.eta_label.setHidden(True)
             self.completed_button.setHidden(True)
             self.pause_button.setHidden(True)
             self.restart_button.setHidden(True)

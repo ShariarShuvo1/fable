@@ -5,7 +5,6 @@ import webbrowser
 from datetime import datetime
 from typing import List
 
-import yt_dlp
 from PyQt6.QtCore import Qt, QEvent, QSize, pyqtSignal, QThread
 from PyQt6.QtGui import QGuiApplication, QIcon, QPixmap, QMovie
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QLineEdit, \
@@ -22,7 +21,6 @@ from Styles.DownloadListStyle import *
 import Consts.Constanats
 from Consts.Settings import *
 from Threads.SearchThread import SearchThread
-from Threads.DownloaderThread import DownloaderThread
 
 
 def is_youtube_url(text):
@@ -239,17 +237,8 @@ class MainWindow(QMainWindow):
         if len(self.download_list) > 0:
             video: File = self.download_list[-1]
             card: Card = Card(video, self.currently_downloading_count)
+            # card.start_download()
             self.download_list_layout.insertWidget(0, card.download_box)
-        # while self.download_list_layout.count() - 1 > 0:
-        #     item = self.download_list_layout.takeAt(0)
-        #     widget = item.widget()
-        #     widget.setParent(None)
-        # for i in range(len(self.download_list) - 1, -1, -1):
-        #     video: File = self.download_list[i]
-        #
-        #     card: Card = Card(video, self.currently_downloading_count)
-        #     self.download_list_layout.insertWidget(
-        #         self.download_list_layout.count() - 1, card.download_box)
 
     def search_clicked(self):
         search_text: str = self.url_input.text()
