@@ -64,13 +64,14 @@ def convert_bits_to_readable_string(bits):
 class MainWindow(QMainWindow):
     array_changed = pyqtSignal()
     download_list_changed = pyqtSignal()
+    delete_card_signal = pyqtSignal(Card)
 
     def start_download(self, video: Video, index: int):
         if video and 0 <= index < len(video.resolution_list):
             resolution: Resolution = video.resolution_list[index]
             found = False
-            for file in self.download_list:
-                if file.webpage_url == video.video_url and file.format_id == resolution.format_id:
+            for card in self.download_list:
+                if card.video.webpage_url == video.video_url and card.video.format_id == resolution.format_id:
                     found = True
                     break
             if not found:
@@ -116,20 +117,22 @@ class MainWindow(QMainWindow):
                         output_path,
                         add_music
                     )
-                    self.download_list.append(file)
-                    self.download_list_changed.emit()
+                    self.download_list_viewer(file)
+                    # self.download_list.append(file)
+                    # self.download_list_changed.emit()
 
     def __init__(self):
         super().__init__()
 
         self.currently_downloading_count: int = 0
 
+        self.delete_card_signal.connect(lambda card: self.delete_card(card))
+
         self.search_result: List[Video] = []
         self.array_changed.connect(self.update_carousel)
         self.search_thread = None
 
-        self.download_list: List[File] = []
-        self.download_list_changed.connect(self.download_list_viewer)
+        self.download_list: List[Card] = []
 
         self.setWindowTitle("Fable")
         self.setStyleSheet(WINDOW_STYLESHEET)
@@ -210,7 +213,7 @@ class MainWindow(QMainWindow):
         self.download_list_layout = QVBoxLayout()
         self.download_list_layout.setSpacing(2)
 
-        self.download_list_viewer()
+        # self.download_list_viewer()
         self.download_list_layout.addStretch()
 
         self.scroll_area = QScrollArea()
@@ -233,12 +236,16 @@ class MainWindow(QMainWindow):
         container.setLayout(main_layout)
         self.setCentralWidget(container)
 
-    def download_list_viewer(self):
-        if len(self.download_list) > 0:
-            video: File = self.download_list[-1]
-            card: Card = Card(video, self.currently_downloading_count)
-            # card.start_download()
-            self.download_list_layout.insertWidget(0, card.download_box)
+    def delete_card(self, card: Card):
+        self.download_list_layout.removeWidget(card.download_box)
+        card.download_box.setParent(None)
+        card.download_box.deleteLater()
+        self.download_list.remove(card)
+
+    def download_list_viewer(self, video: File):
+        card: Card = Card(video, self.currently_downloading_count, self)
+        self.download_list.append(card)
+        self.download_list_layout.insertWidget(0, card.download_box)
 
     def search_clicked(self):
         search_text: str = self.url_input.text()

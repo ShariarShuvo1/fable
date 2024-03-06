@@ -49,7 +49,7 @@ class DownloaderThread(QThread):
                 video_file = f"{self.output_path}/{self.file.title}"
                 ydl_opts = {
                     'format': 'bestaudio/best',
-                    'outtmpl': self.file.output_path + "/" + '%(title)s.%(ext)s',
+                    'outtmpl': self.file.output_path + "/" + f'%(title)s{self.file.format_id}.%(ext)s',
                     'progress_hooks': [self.progress_hook],
                 }
                 self.status.emit("Getting\nAudio Info")
@@ -61,10 +61,14 @@ class DownloaderThread(QThread):
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     self.status.emit("Downloading\nAudio")
                     ydl.download([self.video_url])
-                self.card.pause_button.setDisabled(True)
 
-                output_file = f"{self.output_path}/{self.file.title[:self.file.title.rfind('.')]}_with_music.mp4"
+                self.card.pause_button.setDisabled(True)
+                self.file.title = f"{self.file.title[:self.file.title.rfind('.')]}_with_music.mp4"
+                output_file = f"{self.output_path}/{self.file.title}"
                 self.downloaded_size_updated.emit(["", ""])
+
+                self.card.audio_path = audio_file
+                self.card.video_path = video_file
 
                 audio = AudioFileClip(audio_file)
                 video = VideoFileClip(video_file)
@@ -112,7 +116,7 @@ class DownloaderThread(QThread):
 
     def wait_resume(self):
         while self._paused:
-            self.msleep(100)  # Sleep for 100 milliseconds
+            self.msleep(100)
 
 
 class MyBarLogger(ProgressBarLogger):

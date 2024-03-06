@@ -18,5 +18,5 @@ def get_default_download_folder():
 # OUTPUT_PATH: str = get_default_download_folder()
 OUTPUT_PATH: str = "E:/Code/Projects/fable/vids"
 ALWAYS_ASK_FOR_OUTPUT_PATH: bool = False
-ALWAYS_ASK_TO_ADD_MUSIC: bool = True
+ALWAYS_ASK_TO_ADD_MUSIC: bool = False
 MAXIMUM_SIMULTANEOUS_DOWNLOADS: int = 1

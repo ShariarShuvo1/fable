@@ -1,7 +1,10 @@
+import os
+
 import PyQt6
-from PyQt6.QtCore import QSize
+from PyQt6.QtCore import QSize, pyqtSignal
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QLabel, QVBoxLayout, QHBoxLayout, QProgressBar, QPushButton, QWidget, QLayoutItem
+from PyQt6.QtWidgets import QLabel, QVBoxLayout, QHBoxLayout, QProgressBar, QPushButton, QWidget, QLayoutItem, \
+    QMessageBox
 
 from Entity.File import File
 from Functions.convertBitsToReadableString import convert_bits_to_readable_string
@@ -10,6 +13,7 @@ from Styles.DownloadListStyle import PROGRESS_BAR_STYLESHEET, TOOL_ICON_BUTTON_S
     VIDEO_SIZE_STYLESHEET, VIDEO_TITLE_STYLESHEET
 from Consts.Constanats import DOWNLOAD_BOX_HEIGHT
 from Threads.DownloaderThread import DownloaderThread
+from Functions.get_file_size import get_file_size
 
 
 def remove_inside_layout(layout):
@@ -21,7 +25,11 @@ def remove_inside_layout(layout):
 
 
 class Card:
-    def __init__(self, video: File, currently_downloading_count: int):
+
+    def __init__(self, video: File, currently_downloading_count: int, main_window):
+        self.main_window = main_window
+        self.video_path = None
+        self.audio_path = None
         self.video: File = video
         self.thread = DownloaderThread(video, self)
         self.currently_downloading_count: int = currently_downloading_count
@@ -35,17 +43,13 @@ class Card:
         self.inside_layout = QHBoxLayout()
         self.inside_layout.setSpacing(0)
 
-        self.remove_button = QPushButton()
-        self.remove_button.setIcon(QIcon("./Assets/Icons/cancel-icon.png"))
-        self.remove_button.setIconSize(self.icon_size)
-        self.remove_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
-        self.remove_button.setCursor(PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
-
         self.delete_button = QPushButton()
         self.delete_button.setIcon(QIcon("./Assets/Icons/delete-icon.png"))
         self.delete_button.setIconSize(self.icon_size)
         self.delete_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
         self.delete_button.setCursor(PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
+        self.delete_button.clicked.connect(lambda: self.delete_download())
+        self.delete_button.setHidden(True)
 
         self.restart_button = QPushButton()
         self.restart_button.setIcon(QIcon("./Assets/Icons/restart-icon.png"))
@@ -122,15 +126,35 @@ class Card:
         self.thread.progress_updated.connect(lambda progress=self.progress_bar: self.progress_bar.setValue(progress))
         self.thread.status_updated.connect(lambda status=video.status: self.download_finished(status))
         self.thread.status.connect(lambda status: self.update_status(status))
-        self.thread.speed_updated.connect(lambda speed=self.speed_label: self.speed_label.setText(convert_bits_to_readable_string(speed) + "/s"))
+        self.thread.speed_updated.connect(
+            lambda speed=self.speed_label: self.speed_label.setText(convert_bits_to_readable_string(speed) + "/s"))
         self.thread.eta_updated.connect(lambda eta=self.eta_label: self.eta_label.setText(format_time(eta)))
         self.thread.downloaded_size_updated.connect(lambda size: self.file_size_updated(size))
 
         self.construct_body()
 
+    def delete_download(self):
+        if not self.thread.isRunning() and self.video.status == "Downloaded":
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Icon.Question)
+            msg_box.setText(
+                f"Are you sure you want to delete:\n{self.video.title} ?")
+            msg_box.setWindowTitle("Delete Download")
+            msg_box.setStandardButtons(
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            msg_box.setDefaultButton(
+                QMessageBox.StandardButton.Yes)
+            response = msg_box.exec()
+            if response == QMessageBox.StandardButton.Yes:
+                if os.path.exists(f"{self.video.output_path}/{self.video.title}"):
+                    os.remove(f"{self.video.output_path}/{self.video.title}")
+                self.main_window.delete_card_signal.emit(self)
+
     def update_status(self, status):
         if "Merg" in status:
-            self.pause_button.setToolTip("You can not pause EXPORTING")
+            self.pause_button.setToolTip("You can not pause during EXPORTING")
+            self.eta_label.setHidden(True)
+            self.speed_label.setHidden(True)
         self.status_label.setText(f"{status}")
 
     def file_size_updated(self, size: list):
@@ -146,10 +170,9 @@ class Card:
 
     def download_finished(self, status: str):
         self.video.status = status
-        if self.video.file_size:
-            self.file_size_label.setText(convert_bits_to_readable_string(self.video.file_size))
-        else:
-            self.file_size_label.setText("N/A")
+        self.video.file_size = get_file_size(f"{self.video.output_path}/{self.video.title}")
+        self.file_size_label.setText(convert_bits_to_readable_string(self.video.file_size))
+        self.delete_button.setHidden(False)
         self.construct_body()
 
     def pause_download_video(self):
@@ -206,13 +229,11 @@ class Card:
             self.inside_layout.addSpacing(5)
             self.inside_layout.addWidget(self.video_title)
             self.inside_layout.addStretch()
-            # self.inside_layout.addWidget(self.status_label)
         elif self.video.status == "Downloaded":
             self.inside_layout.addWidget(self.completed_button)
             self.inside_layout.addSpacing(5)
             self.inside_layout.addWidget(self.video_title)
             self.inside_layout.addStretch()
-            # self.inside_layout.addWidget(self.status_label)
         elif self.video.status in ("Downloading", "Paused"):
             if self.video.status == "Downloading":
                 self.inside_layout.addWidget(self.pause_button)
@@ -238,7 +259,6 @@ class Card:
         self.inside_layout.addWidget(self.status_label)
         self.inside_layout.addWidget(self.file_size_label)
         self.inside_layout.addWidget(self.datetime_label)
-        self.inside_layout.addWidget(self.remove_button)
         self.inside_layout.addWidget(self.delete_button)
 
         if self.video.status == "Queued":
