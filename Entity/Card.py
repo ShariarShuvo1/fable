@@ -136,7 +136,7 @@ class Card:
     def delete_download(self):
         if not self.thread.isRunning() and self.video.status == "Downloaded":
             msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Icon.Question)
+            msg_box.setIcon(QMessageBox.Icon.Critical)
             msg_box.setText(
                 f"Are you sure you want to delete:\n{self.video.title} ?")
             msg_box.setWindowTitle("Delete Download")

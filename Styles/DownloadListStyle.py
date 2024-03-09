@@ -95,3 +95,32 @@ SCROLL_AREA_STYLESHEET: str = """
     
     
 """
+
+PLAYLIST_DOWNLOAD_BUTTON_STYLESHEET: str = """
+    QPushButton {
+        background-color: #009614;
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+        padding: 5px;
+        border-radius: 5px;
+    }
+    QPushButton:hover {
+        background-color: #018212;
+    }
+    QPushButton:pressed {
+        background-color: darkgreen;
+    }
+"""
+
+PLAYLIST_TITLE_STYLESHEET = """
+    QLabel {
+        font-size: 24px;
+        margin-top: 10px;
+        border-top-left-radius: 5px;
+        border-top-right-radius: 5px;
+        font-weight: bold;
+        color: white;
+        background-color: #9a00bd;
+    }
+"""

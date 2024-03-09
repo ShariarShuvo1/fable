@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from Consts.Settings import *
+from Consts.SettingsData import *
 
 
 class File:

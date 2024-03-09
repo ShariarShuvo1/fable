@@ -1,6 +1,5 @@
 import math
 import sys
-import re
 import webbrowser
 from datetime import datetime
 from typing import List
@@ -15,17 +14,20 @@ from Entity.Resolution import Resolution
 from Entity.Video import Video
 from Entity.File import File
 from Functions.SanitizeFilename import *
+from Functions.youtube_url_checker import *
+from Styles.PlaylistStyle import PLAYLIST_PROGRESS_STYLESHEET
 from Styles.SearchStyle import *
 from Styles.CarouselStyle import *
 from Styles.DownloadListStyle import *
+from Styles.FooterStyle import *
 import Consts.Constanats
-from Consts.Settings import *
+from Consts.SettingsData import *
+from Threads.SearchPlaylistThread import SearchPlaylistThread
 from Threads.SearchThread import SearchThread
+from settings import SettingsWindow
 
 
-def is_youtube_url(text):
-    youtube_regex = r"(https?://)?(www\.)?(youtube\.com/watch\?v=|youtu\.be/)"
-    return re.match(youtube_regex, text) is not None
+
 
 
 def open_channel(url):
@@ -103,9 +105,8 @@ class MainWindow(QMainWindow):
                     elif resolution.file_type == "mix":
                         title += f"_{resolution.height}p"
                     elif resolution.file_type == "video":
-                        title += f"_{resolution.height}p_{
-                        int(resolution.vbr)}kbps"
-                    file: File = File(
+                        title += f"_{resolution.height}p_{int(resolution.vbr)}kbps"
+                    file_obj: File = File(
                         f"{title}.{extension}",
                         video.video_url,
                         resolution.format_id,
@@ -117,13 +118,12 @@ class MainWindow(QMainWindow):
                         output_path,
                         add_music
                     )
-                    self.download_list_viewer(file)
-                    # self.download_list.append(file)
-                    # self.download_list_changed.emit()
+                    self.download_list_viewer(file_obj)
 
     def __init__(self):
         super().__init__()
 
+        self.playlist_search_result = None
         self.currently_downloading_count: int = 0
 
         self.delete_card_signal.connect(lambda card: self.delete_card(card))
@@ -131,6 +131,7 @@ class MainWindow(QMainWindow):
         self.search_result: List[Video] = []
         self.array_changed.connect(self.update_carousel)
         self.search_thread = None
+        self.search_playlist_thread = None
 
         self.download_list: List[Card] = []
 
@@ -205,15 +206,20 @@ class MainWindow(QMainWindow):
         # Search Result End ============================================
 
         # Download List Began ============================================
+        self.main_body_frame = QHBoxLayout()
+        self.main_body_frame.setContentsMargins(0, 0, 0, 0)
+        self.main_body_frame.setSpacing(0)
+
+        self.download_frame = QVBoxLayout()
+
         self.download_title = QLabel("Download List")
         self.download_title.setStyleSheet(DOWNLOAD_TITLE_STYLESHEET)
         self.download_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.download_title.setFixedHeight(50)
-        main_layout.addWidget(self.download_title)
+        self.download_frame.addWidget(self.download_title)
         self.download_list_layout = QVBoxLayout()
         self.download_list_layout.setSpacing(2)
 
-        # self.download_list_viewer()
         self.download_list_layout.addStretch()
 
         self.scroll_area = QScrollArea()
@@ -228,13 +234,92 @@ class MainWindow(QMainWindow):
 
         self.download_list_container.setLayout(self.download_list_layout)
         self.scroll_area.setWidget(self.download_list_container)
+        self.download_frame.addWidget(self.scroll_area)
 
-        main_layout.addWidget(self.scroll_area)
+        self.main_body_frame.addLayout(self.download_frame)
+
+        # Playlist Start ============================================
+        self.playlist_widget = QWidget()
+        self.playlist_widget.setFixedWidth(500)
+        self.playlist_layout = QVBoxLayout()
+        self.playlist_layout.setContentsMargins(5, 0, 0, 0)
+
+        self.playlist_title = QLabel("Playlist")
+        self.playlist_title.setStyleSheet(PLAYLIST_TITLE_STYLESHEET)
+        self.playlist_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.playlist_title.setFixedHeight(50)
+        self.playlist_layout.addWidget(self.playlist_title)
+        self.playlist_layout.setSpacing(0)
+
+        self.playlist_progress = QProgressBar()
+        self.playlist_progress.setFixedHeight(30)
+        self.playlist_progress.setRange(0, 100)
+        self.playlist_progress.setValue(0)
+        self.playlist_progress.setHidden(True)
+        self.playlist_progress.setStyleSheet(PLAYLIST_PROGRESS_STYLESHEET)
+        self.playlist_layout.addWidget(self.playlist_progress)
+
+        self.playlist_scroll_layout = QVBoxLayout()
+        self.playlist_scroll_layout.setSpacing(2)
+        self.playlist_scroll_layout.addStretch()
+
+        self.playlist_scroll_area = QScrollArea()
+        self.playlist_scroll_area.setWidgetResizable(True)
+        self.playlist_scroll_area.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.playlist_scroll_area.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.playlist_scroll_area.setStyleSheet(SCROLL_AREA_STYLESHEET)
+
+        self.playlist_container = QWidget()
+        self.playlist_container.setLayout(self.playlist_scroll_layout)
+        self.playlist_scroll_area.setWidget(self.playlist_container)
+        self.playlist_layout.addWidget(self.playlist_scroll_area)
+
+        self.playlist_download_button = QPushButton("Download")
+        self.playlist_download_button.setStyleSheet(PLAYLIST_DOWNLOAD_BUTTON_STYLESHEET)
+        self.playlist_download_button.setFixedHeight(30)
+        self.playlist_download_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.playlist_layout.addWidget(self.playlist_download_button)
+
+        self.playlist_widget.setLayout(self.playlist_layout)
+        self.playlist_widget.setHidden(True)
+        self.main_body_frame.addWidget(self.playlist_widget)
+        # Playlist End ============================================
+
+        main_layout.addLayout(self.main_body_frame)
         # Download List End ============================================
+
+        # Footer Start ============================================
+        self.footer_layout = QHBoxLayout()
+        self.settings = QPushButton()
+        self.settings.setIcon(QIcon("./Assets/Icons/settings.png"))
+        self.settings.setIconSize(QSize(30, 30))
+        self.settings.setStyleSheet(FOOTER_STYLESHEET)
+        self.settings.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.settings.clicked.connect(self.show_settings_window)
+        self.footer_layout.addWidget(self.settings)
+
+        github = QPushButton()
+        github.setIcon(QIcon("./Assets/Icons/github.png"))
+        github.setIconSize(QSize(30, 30))
+
+        github.setStyleSheet(FOOTER_STYLESHEET)
+        github.setCursor(Qt.CursorShape.PointingHandCursor)
+        github.clicked.connect(
+            lambda: open_channel("https://github.com/ShariarShuvo1/fable"))
+        self.footer_layout.addWidget(github)
+        self.footer_layout.addStretch()
+        main_layout.addLayout(self.footer_layout)
+        # Footer End ============================================
 
         container: QWidget = QWidget()
         container.setLayout(main_layout)
         self.setCentralWidget(container)
+
+    def show_settings_window(self):
+        settings_window = SettingsWindow(self)
+        settings_window.exec()
 
     def delete_card(self, card: Card):
         self.download_list_layout.removeWidget(card.download_box)
@@ -248,17 +333,38 @@ class MainWindow(QMainWindow):
         self.download_list_layout.insertWidget(0, card.download_box)
 
     def search_clicked(self):
+        self.playlist_widget.setHidden(True)
         search_text: str = self.url_input.text()
         if len(search_text) > 0:
             self.search_button.setHidden(True)
             self.url_input.setDisabled(True)
             self.loading_label.setVisible(True)
-            if self.search_thread and self.search_thread.isRunning():
-                self.search_thread.terminate()
-            self.search_thread = SearchThread(
-                search_text, Consts.Constanats.TOTAL_ELEMENT_FOR_CAROUSEL)
-            self.search_thread.search_finished.connect(self.on_search_finished)
-            self.search_thread.start()
+            if is_youtube_playlist(search_text):
+                self.playlist_widget.setHidden(False)
+                self.playlist_progress.setHidden(False)
+                if self.search_playlist_thread and self.search_playlist_thread.isRunning():
+                    self.search_playlist_thread.terminate()
+                self.search_playlist_thread = SearchPlaylistThread(search_text)
+                self.search_playlist_thread.search_finished.connect(
+                    self.on_playlist_search_finished)
+                self.search_playlist_thread.total_videos.connect(
+                    self.total_video_in_playlist)
+                self.search_playlist_thread.completed_videos.connect(
+                    self.update_playlist_progress)
+                self.search_playlist_thread.start()
+            else:
+                if self.search_thread and self.search_thread.isRunning():
+                    self.search_thread.terminate()
+                self.search_thread = SearchThread(
+                    search_text, Consts.Constanats.TOTAL_ELEMENT_FOR_CAROUSEL)
+                self.search_thread.search_finished.connect(self.on_search_finished)
+                self.search_thread.start()
+
+    def total_video_in_playlist(self, total: int):
+        self.playlist_progress.setRange(0, total)
+
+    def update_playlist_progress(self, completed: int):
+        self.playlist_progress.setValue(completed)
 
     def on_search_finished(self, result_list):
         self.search_result = result_list
@@ -266,6 +372,14 @@ class MainWindow(QMainWindow):
         self.search_button.setHidden(False)
         self.loading_label.setVisible(False)
         self.array_changed.emit()
+
+    def on_playlist_search_finished(self, result_list):
+        self.playlist_progress.setHidden(True)
+        self.playlist_search_result = result_list
+        self.url_input.setDisabled(False)
+        self.search_button.setHidden(False)
+        self.loading_label.setVisible(False)
+        # self.array_changed.emit()
 
     def update_carousel(self):
         for i in reversed(range(self.carousel_layout.count())):
@@ -308,7 +422,7 @@ class MainWindow(QMainWindow):
             resolution_layout = QVBoxLayout()
 
             resolution_combo = QComboBox()
-            resolution_combo.setFixedHeight(40)
+            resolution_combo.setMinimumHeight(40)
             resolution_combo.setStyleSheet(RESOLUTION_COMBOBOX_STYLESHEET)
             resolution_combo.setPlaceholderText("Choose Quality")
 
@@ -349,7 +463,7 @@ class MainWindow(QMainWindow):
 
             download_selected_res.setStyleSheet(
                 DOWNLOAD_CURRENT_RES_BUTTON_STYLESHEET)
-            download_selected_res.setFixedHeight(40)
+            download_selected_res.setMinimumHeight(40)
             download_selected_res.setCursor(Qt.CursorShape.PointingHandCursor)
             resolution_layout.addWidget(download_selected_res)
             first_row.addLayout(resolution_layout)
@@ -402,7 +516,7 @@ class MainWindow(QMainWindow):
         if obj is self.url_input:
             if event.type() == QEvent.Type.FocusIn:
                 clipboard_text: str = QApplication.clipboard().text()
-                if is_youtube_url(clipboard_text):
+                if is_youtube_url(clipboard_text) or is_youtube_playlist(clipboard_text):
                     self.url_input.setPlaceholderText(
                         f"{clipboard_text}    press [TAB] to paste")
                 else:
