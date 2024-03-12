@@ -10,7 +10,9 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout,
     QLabel, QComboBox, QMessageBox, QStyleFactory, QStyle, QProgressBar, QScrollArea, QFrame, QFileDialog
 
 from Entity.Card import Card
+from Entity.PlaylistCard import PlaylistCard
 from Entity.Resolution import Resolution
+from Entity.ToggleButton import ToggleButton
 from Entity.Video import Video
 from Entity.File import File
 from Functions.SanitizeFilename import *
@@ -25,9 +27,6 @@ from Consts.SettingsData import *
 from Threads.SearchPlaylistThread import SearchPlaylistThread
 from Threads.SearchThread import SearchThread
 from settings import SettingsWindow
-
-
-
 
 
 def open_channel(url):
@@ -68,24 +67,35 @@ class MainWindow(QMainWindow):
     download_list_changed = pyqtSignal()
     delete_card_signal = pyqtSignal(Card)
 
-    def start_download(self, video: Video, index: int):
+    def start_download(self, video: Video, index: int, res=None, playlist_output_path=None,
+                       add_music_to_playlist=False):
         if video and 0 <= index < len(video.resolution_list):
-            resolution: Resolution = video.resolution_list[index]
+            if not res:
+                resolution: Resolution = video.resolution_list[index]
+            else:
+                resolution: Resolution = res
             found = False
             for card in self.download_list:
-                if card.video.webpage_url == video.video_url and card.video.format_id == resolution.format_id:
+                if not res and card.video.webpage_url == video.video_url and card.video.format_id == resolution.format_id:
+                    found = True
+                    break
+                elif res and card.video.webpage_url == video.video_url and card.video.format_id == resolution.format_id and card.video.add_music == add_music_to_playlist:
                     found = True
                     break
             if not found:
-                if ALWAYS_ASK_FOR_OUTPUT_PATH:
+                if get_ask_for_output_path() and not res:
                     output_path = QFileDialog.getExistingDirectory(
-                        self, "Select Directory", OUTPUT_PATH)
+                        self, "Select Directory", get_output_path())
+                    if output_path == "" or output_path == " " or output_path is None:
+                        return
+                elif playlist_output_path and res:
+                    output_path = playlist_output_path
                 else:
-                    output_path = OUTPUT_PATH
+                    output_path = get_output_path()
                 if len(output_path) > 0:
-                    add_music = False
+                    add_music = get_add_music()
                     extension: str = resolution.ext
-                    if ALWAYS_ASK_TO_ADD_MUSIC and resolution.file_type == "video":
+                    if get_always_ask_to_add_music() and resolution.file_type == "video" and not res:
                         msg_box = QMessageBox()
                         msg_box.setIcon(QMessageBox.Icon.Question)
                         msg_box.setText(
@@ -99,6 +109,12 @@ class MainWindow(QMainWindow):
                         if response == QMessageBox.StandardButton.Yes:
                             add_music = True
                             extension = "mp4"
+                    elif res and add_music_to_playlist:
+                        add_music = True
+                        extension = "mp4"
+                    for card in self.download_list:
+                        if not res and card.video.webpage_url == video.video_url and card.video.format_id == resolution.format_id and card.video.add_music == add_music:
+                            return
                     title = sanitize_filename(video.title)
                     if resolution.file_type == "audio":
                         title += f"_{int(resolution.abr)}kbps"
@@ -123,7 +139,6 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.playlist_search_result = None
         self.currently_downloading_count: int = 0
 
         self.delete_card_signal.connect(lambda card: self.delete_card(card))
@@ -134,6 +149,8 @@ class MainWindow(QMainWindow):
         self.search_playlist_thread = None
 
         self.download_list: List[Card] = []
+
+        self.playlist_list: List[PlaylistCard] = []
 
         self.setWindowTitle("Fable")
         self.setStyleSheet(WINDOW_STYLESHEET)
@@ -161,6 +178,14 @@ class MainWindow(QMainWindow):
         movie.start()
         self.loading_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         url_layout.addWidget(self.loading_label)
+
+        self.search_cancel_button: QPushButton = QPushButton("Cancel")
+        self.search_cancel_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.search_cancel_button.setMinimumSize(100, 50)
+        self.search_cancel_button.setStyleSheet(CANCEL_BUTTON_STYLESHEET)
+        self.search_cancel_button.clicked.connect(self.cancel_search_clicked)
+        self.search_cancel_button.setHidden(True)
+        url_layout.addWidget(self.search_cancel_button)
 
         self.search_button: QPushButton = QPushButton("Search")
         self.search_button.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -261,7 +286,6 @@ class MainWindow(QMainWindow):
 
         self.playlist_scroll_layout = QVBoxLayout()
         self.playlist_scroll_layout.setSpacing(2)
-        self.playlist_scroll_layout.addStretch()
 
         self.playlist_scroll_area = QScrollArea()
         self.playlist_scroll_area.setWidgetResizable(True)
@@ -276,10 +300,26 @@ class MainWindow(QMainWindow):
         self.playlist_scroll_area.setWidget(self.playlist_container)
         self.playlist_layout.addWidget(self.playlist_scroll_area)
 
-        self.playlist_download_button = QPushButton("Download")
+        self.playlist_resolution_combo = QComboBox()
+        self.playlist_resolution_combo.setMinimumHeight(40)
+        self.playlist_resolution_combo.setStyleSheet(RESOLUTION_COMBOBOX_STYLESHEET)
+        self.playlist_resolution_combo.setPlaceholderText("Choose Quality For Selected")
+
+        self.playlist_resolution_combo.addItem("Best Audio Only [Fast]")
+        self.playlist_resolution_combo.addItem("Video Only (with Audio) [Fast]")
+        self.playlist_resolution_combo.addItem("Best Video Only (No Audio) [Fast]")
+        self.playlist_resolution_combo.addItem("Best Quality (Video with Audio) [Slow]")
+
+        self.playlist_download_button = QPushButton("Download Selected")
         self.playlist_download_button.setStyleSheet(PLAYLIST_DOWNLOAD_BUTTON_STYLESHEET)
         self.playlist_download_button.setFixedHeight(30)
         self.playlist_download_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        (self.playlist_download_button.clicked.connect(
+            lambda checked,
+                   combo=self.playlist_resolution_combo: self.playlist_download_clicked(combo.currentIndex())
+        ))
+        self.playlist_layout.addWidget(self.playlist_resolution_combo)
+        self.playlist_layout.addSpacing(5)
         self.playlist_layout.addWidget(self.playlist_download_button)
 
         self.playlist_widget.setLayout(self.playlist_layout)
@@ -310,12 +350,124 @@ class MainWindow(QMainWindow):
             lambda: open_channel("https://github.com/ShariarShuvo1/fable"))
         self.footer_layout.addWidget(github)
         self.footer_layout.addStretch()
+
+        self.fast_audio_story_mode_label = QLabel("Fast Mode")
+        self.fast_audio_story_mode_label.setStyleSheet(FOOTER_LABEL_STYLESHEET)
+        self.footer_layout.addWidget(self.fast_audio_story_mode_label)
+
+        self.fast_audio_story_toggler = ToggleButton()
+        self.fast_audio_story_toggler.setFixedSize(50, 25)
+        self.fast_audio_story_toggler.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.fast_audio_story_toggler.setChecked(get_always_fast_audio_story_mode())
+        self.footer_layout.addWidget(self.fast_audio_story_toggler)
+        self.fast_audio_story_mode_label.setDisabled(not get_always_start_with_audio_story_mode())
+        self.fast_audio_story_toggler.setDisabled(not get_always_start_with_audio_story_mode())
+
+        self.audio_story_mode_label = QLabel("Audio Story Mode")
+        self.audio_story_mode_label.setStyleSheet(FOOTER_LABEL_STYLESHEET)
+        self.footer_layout.addWidget(self.audio_story_mode_label)
+
+        self.audio_story_toggler = ToggleButton()
+        self.audio_story_toggler.setFixedSize(50, 25)
+        self.audio_story_toggler.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.audio_story_toggler.setChecked(get_always_start_with_audio_story_mode())
+        self.audio_story_toggler.clicked.connect(self.audio_story_toggler_clicked)
+        self.footer_layout.addWidget(self.audio_story_toggler)
+
         main_layout.addLayout(self.footer_layout)
         # Footer End ============================================
 
         container: QWidget = QWidget()
         container.setLayout(main_layout)
         self.setCentralWidget(container)
+
+    def audio_story_toggler_clicked(self):
+        if self.audio_story_toggler.isChecked():
+            self.fast_audio_story_mode_label.setDisabled(False)
+            self.fast_audio_story_toggler.setDisabled(False)
+        else:
+            self.fast_audio_story_mode_label.setDisabled(True)
+            self.fast_audio_story_toggler.setDisabled(True)
+
+    def cancel_search_clicked(self):
+        if self.search_thread and self.search_thread.isRunning():
+            self.search_thread.terminate()
+        if self.search_playlist_thread and self.search_playlist_thread.isRunning():
+            self.search_playlist_thread.terminate()
+        self.url_input.setDisabled(False)
+        self.search_button.setHidden(False)
+        self.loading_label.setVisible(False)
+        self.search_cancel_button.setHidden(True)
+        self.clear_playlist()
+        self.playlist_widget.setHidden(True)
+
+    def playlist_download_clicked(self, index: int):
+        if index >= 0:
+            playlist: List[PlaylistCard] = []
+            if get_ask_for_playlist_output_path():
+                output_path = QFileDialog.getExistingDirectory(
+                    self, "Select Directory", get_playlist_output_path())
+                if output_path == "":
+                    output_path = get_playlist_output_path()
+                if output_path == "":
+                    output_path = get_default_download_folder()
+            else:
+                output_path = get_playlist_output_path()
+                if output_path == "":
+                    output_path = get_default_download_folder()
+            for card in self.playlist_list:
+                if card.add_button.isHidden():
+                    playlist.insert(0, card)
+            if index == 0:
+                for card in playlist:
+                    best_res = None
+                    best_abr = -1
+                    for res in card.video.resolution_list:
+                        if res.file_type == "audio" and res.abr > best_abr:
+                            best_abr = res.abr
+                            best_res = res
+                    if best_res:
+                        self.start_download(card.video, 0, best_res, output_path)
+            elif index == 1:
+                for card in playlist:
+                    best_height = 0
+                    best_res = None
+                    for res in card.video.resolution_list:
+                        if res.file_type == "mix" and res.height > best_height:
+                            best_height = res.height
+                            best_res = res
+                    if best_res:
+                        self.start_download(card.video, 0, best_res, output_path)
+            elif index == 2:
+                for card in playlist:
+                    best_height_vbr = 0
+                    best_res = None
+                    for res in card.video.resolution_list:
+                        if res.file_type == "video" and res.vbr > best_height_vbr:
+                            best_height_vbr = res.vbr
+                            best_res = res
+                    if best_res:
+                        self.start_download(card.video, 0, best_res, output_path)
+            elif index == 3:
+                for card in playlist:
+                    best_height_vbr = 0
+                    best_res = None
+                    for res in card.video.resolution_list:
+                        if res.file_type == "video" and res.vbr > best_height_vbr:
+                            best_height_vbr = res.vbr
+                            best_res = res
+                    if best_res:
+                        self.start_download(card.video, 0, best_res, output_path, True)
+            self.clear_playlist()
+
+    def clear_playlist(self):
+        self.playlist_progress.setValue(0)
+        self.playlist_progress.setHidden(True)
+        for card in self.playlist_list:
+            self.playlist_scroll_layout.removeWidget(card.playlist_box)
+            card.playlist_box.setParent(None)
+            card.playlist_box.deleteLater()
+        self.playlist_list.clear()
 
     def show_settings_window(self):
         settings_window = SettingsWindow(self)
@@ -333,10 +485,14 @@ class MainWindow(QMainWindow):
         self.download_list_layout.insertWidget(0, card.download_box)
 
     def search_clicked(self):
+        self.search_result = []
+        self.array_changed.emit()
+        self.clear_playlist()
         self.playlist_widget.setHidden(True)
         search_text: str = self.url_input.text()
         if len(search_text) > 0:
             self.search_button.setHidden(True)
+            self.search_cancel_button.setHidden(False)
             self.url_input.setDisabled(True)
             self.loading_label.setVisible(True)
             if is_youtube_playlist(search_text):
@@ -371,15 +527,30 @@ class MainWindow(QMainWindow):
         self.url_input.setDisabled(False)
         self.search_button.setHidden(False)
         self.loading_label.setVisible(False)
+        self.search_cancel_button.setHidden(True)
         self.array_changed.emit()
 
     def on_playlist_search_finished(self, result_list):
+        if len(result_list) == 0:
+            self.clear_playlist()
+            self.playlist_progress.setValue(0)
+            self.playlist_progress.setHidden(True)
+            self.url_input.setDisabled(False)
+            self.search_button.setHidden(False)
+            self.loading_label.setVisible(False)
+            self.playlist_widget.setHidden(True)
+            return
         self.playlist_progress.setHidden(True)
-        self.playlist_search_result = result_list
         self.url_input.setDisabled(False)
+        self.search_cancel_button.setHidden(True)
         self.search_button.setHidden(False)
         self.loading_label.setVisible(False)
-        # self.array_changed.emit()
+        idx = 0
+        for video in result_list:
+            self.playlist_list.append(PlaylistCard(video, self))
+            self.playlist_scroll_layout.insertWidget(idx, self.playlist_list[-1].playlist_box)
+            idx += 1
+        self.playlist_scroll_layout.addStretch()
 
     def update_carousel(self):
         for i in reversed(range(self.carousel_layout.count())):

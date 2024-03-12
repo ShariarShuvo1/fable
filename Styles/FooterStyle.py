@@ -11,3 +11,13 @@ FOOTER_STYLESHEET = """
         background-color: #e788fc;
     }
 """
+
+FOOTER_LABEL_STYLESHEET = """
+    QLabel {
+        color: black;
+        font-size: 12px;
+    }
+    QLabel:disabled {
+        color: #7d7d7d;
+    }
+"""

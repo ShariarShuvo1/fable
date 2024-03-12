@@ -42,3 +42,20 @@ LOADING_BUTTON_STYLESHEET: str = """
         border: 2px solid #5a026e;
     }
 """
+
+CANCEL_BUTTON_STYLESHEET: str = """
+    QPushButton {
+        padding: 5px;
+        border-radius: 5px;
+        background-color: #e3002a;
+        color: white;
+        font-size: 20px;
+        font-weight: bold;
+    }
+    QPushButton:hover {
+        background-color: #d9022a;
+    }
+    QPushButton:pressed {
+        background-color: #c90227;
+    }
+"""

@@ -49,7 +49,7 @@ class Card:
         self.delete_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
         self.delete_button.setCursor(PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
         self.delete_button.clicked.connect(lambda: self.delete_download())
-        self.delete_button.setHidden(True)
+        self.delete_button.setHidden(False)
 
         self.restart_button = QPushButton()
         self.restart_button.setIcon(QIcon("./Assets/Icons/restart-icon.png"))
@@ -134,11 +134,17 @@ class Card:
         self.construct_body()
 
     def delete_download(self):
-        if not self.thread.isRunning() and self.video.status == "Downloaded":
+        if (not self.thread.isRunning() and (self.video.status == "Downloaded" or self.video.status == "Queued")) or (self.thread.isRunning() and self.video.status == "Paused"):
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Icon.Critical)
-            msg_box.setText(
-                f"Are you sure you want to delete:\n{self.video.title} ?")
+            if self.video.status == "Paused":
+                msg_box.setText(
+                    f"Are you sure you want to delete:\n{self.video.title} ?"
+                    f"\n\nDeleting during paused state will not delete the .part file."
+                    f"Please delete the .part file manually.")
+            else:
+                msg_box.setText(
+                    f"Are you sure you want to delete:\n{self.video.title} ?")
             msg_box.setWindowTitle("Delete Download")
             msg_box.setStandardButtons(
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
@@ -146,6 +152,8 @@ class Card:
                 QMessageBox.StandardButton.Yes)
             response = msg_box.exec()
             if response == QMessageBox.StandardButton.Yes:
+                if self.thread.isRunning() and self.video.status == "Paused":
+                    self.thread.terminate()
                 if os.path.exists(f"{self.video.output_path}/{self.video.title}"):
                     os.remove(f"{self.video.output_path}/{self.video.title}")
                 self.main_window.delete_card_signal.emit(self)
@@ -222,6 +230,7 @@ class Card:
         self.status_label.setText(self.video.status)
 
         if self.video.status in ("Queued", "Stopped"):
+            self.delete_button.setHidden(False)
             if self.video.status == "Queued":
                 self.inside_layout.addWidget(self.play_button)
             else:
@@ -230,11 +239,16 @@ class Card:
             self.inside_layout.addWidget(self.video_title)
             self.inside_layout.addStretch()
         elif self.video.status == "Downloaded":
+            self.delete_button.setHidden(False)
             self.inside_layout.addWidget(self.completed_button)
             self.inside_layout.addSpacing(5)
             self.inside_layout.addWidget(self.video_title)
             self.inside_layout.addStretch()
         elif self.video.status in ("Downloading", "Paused"):
+            if self.video.status == "Downloading":
+                self.delete_button.setHidden(True)
+            else:
+                self.delete_button.setHidden(False)
             if self.video.status == "Downloading":
                 self.inside_layout.addWidget(self.pause_button)
             else:

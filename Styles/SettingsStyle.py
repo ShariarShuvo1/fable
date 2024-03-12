@@ -1,3 +1,9 @@
+SETTINGS_LABEL_STYLE = """
+    QLabel {
+        font-size: 14px;
+    }
+"""
+
 OUTPUT_PATH_BUTTON_STYLE = """
     QPushButton {
         border-radius: 5px;
@@ -95,6 +101,23 @@ RADIO_BUTTON_STYLE = """
         background-color: blue;
     }
     
+"""
+
+DONE_SETTINGS_BUTTON_STYLE = """
+    QPushButton {
+        padding: 5px;
+        border-radius: 5px;
+        background-color: #008531;
+        color: white;
+        font-size: 20px;
+        font-weight: bold;
+    }
+    QPushButton:hover {
+        background-color: #01702a;
+    }
+    QPushButton:pressed {
+        background-color: #015e23;
+    }
 """
 
 RESTORE_SETTINGS_BUTTON_STYLE = """
