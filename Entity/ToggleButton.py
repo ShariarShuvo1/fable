@@ -35,6 +35,7 @@ class ToggleButton(QPushButton):
             circle_x = 4
         circle_y = int((self.rect().height() - circle_radius * 2) / 2)
         painter.setBrush(QBrush(circle_color))
-        painter.drawEllipse(circle_x, circle_y, int(circle_radius * 2), int(circle_radius * 2))
+        painter.drawEllipse(circle_x, circle_y, int(
+            circle_radius * 2), int(circle_radius * 2))
 
         painter.end()

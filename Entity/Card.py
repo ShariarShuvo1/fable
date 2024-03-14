@@ -47,7 +47,8 @@ class Card:
         self.delete_button.setIcon(QIcon("./Assets/Icons/delete-icon.png"))
         self.delete_button.setIconSize(self.icon_size)
         self.delete_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
-        self.delete_button.setCursor(PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
+        self.delete_button.setCursor(
+            PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
         self.delete_button.clicked.connect(lambda: self.delete_download())
         self.delete_button.setHidden(False)
 
@@ -55,7 +56,8 @@ class Card:
         self.restart_button.setIcon(QIcon("./Assets/Icons/restart-icon.png"))
         self.restart_button.setIconSize(self.icon_size)
         self.restart_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
-        self.restart_button.setCursor(PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
+        self.restart_button.setCursor(
+            PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
 
         self.completed_button = QPushButton()
         self.completed_button.setIcon(
@@ -73,7 +75,8 @@ class Card:
         self.pause_button.setIcon(QIcon("./Assets/Icons/pause-icon.png"))
         self.pause_button.setIconSize(self.icon_size)
         self.pause_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
-        self.pause_button.setCursor(PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
+        self.pause_button.setCursor(
+            PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
         self.pause_button.clicked.connect(lambda: self.pause_download_video())
 
         self.play_button: QPushButton = QPushButton()
@@ -81,28 +84,33 @@ class Card:
         self.play_button.setIconSize(self.icon_size)
         self.play_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
         self.play_button.clicked.connect(lambda: self.start_download())
-        self.play_button.setCursor(PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
+        self.play_button.setCursor(
+            PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
 
         self.datetime_label = QLabel(
             self.video.added_date.strftime("%Y-%m-%d %H:%M:%S"))
         self.datetime_label.setStyleSheet(VIDEO_STATUS_STYLESHEET)
         self.datetime_label.setFixedWidth(110)
-        self.datetime_label.setAlignment(PyQt6.QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.datetime_label.setAlignment(
+            PyQt6.QtCore.Qt.AlignmentFlag.AlignCenter)
 
         if self.video.file_size:
-            self.file_size = convert_bits_to_readable_string(self.video.file_size)
+            self.file_size = convert_bits_to_readable_string(
+                self.video.file_size)
         else:
             self.file_size = "N/A"
 
         self.file_size_label = QLabel(self.file_size)
         self.file_size_label.setStyleSheet(VIDEO_SIZE_STYLESHEET)
         self.file_size_label.setFixedWidth(130)
-        self.file_size_label.setAlignment(PyQt6.QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.file_size_label.setAlignment(
+            PyQt6.QtCore.Qt.AlignmentFlag.AlignCenter)
 
         self.speed_label = QLabel()
         self.speed_label.setStyleSheet(VIDEO_STATUS_STYLESHEET)
         self.speed_label.setFixedWidth(70)
-        self.speed_label.setAlignment(PyQt6.QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.speed_label.setAlignment(
+            PyQt6.QtCore.Qt.AlignmentFlag.AlignCenter)
 
         self.eta_label = QLabel()
         self.eta_label.setFixedWidth(70)
@@ -112,7 +120,8 @@ class Card:
         self.status_label: QLabel = QLabel(self.video.status)
         self.status_label.setFixedWidth(70)
         self.status_label.setStyleSheet(VIDEO_STATUS_STYLESHEET)
-        self.status_label.setAlignment(PyQt6.QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.status_label.setAlignment(
+            PyQt6.QtCore.Qt.AlignmentFlag.AlignCenter)
 
         self.video_title: QLabel = QLabel(self.video.title)
         self.video_title.setStyleSheet(VIDEO_TITLE_STYLESHEET)
@@ -123,13 +132,17 @@ class Card:
         self.download_box: QWidget = QWidget()
         self.download_box.setFixedHeight(DOWNLOAD_BOX_HEIGHT)
 
-        self.thread.progress_updated.connect(lambda progress=self.progress_bar: self.progress_bar.setValue(progress))
-        self.thread.status_updated.connect(lambda status=video.status: self.download_finished(status))
+        self.thread.progress_updated.connect(
+            lambda progress=self.progress_bar: self.progress_bar.setValue(progress))
+        self.thread.status_updated.connect(
+            lambda status=video.status: self.download_finished(status))
         self.thread.status.connect(lambda status: self.update_status(status))
         self.thread.speed_updated.connect(
             lambda speed=self.speed_label: self.speed_label.setText(convert_bits_to_readable_string(speed) + "/s"))
-        self.thread.eta_updated.connect(lambda eta=self.eta_label: self.eta_label.setText(format_time(eta)))
-        self.thread.downloaded_size_updated.connect(lambda size: self.file_size_updated(size))
+        self.thread.eta_updated.connect(
+            lambda eta=self.eta_label: self.eta_label.setText(format_time(eta)))
+        self.thread.downloaded_size_updated.connect(
+            lambda size: self.file_size_updated(size))
 
         self.construct_body()
 
@@ -178,8 +191,10 @@ class Card:
 
     def download_finished(self, status: str):
         self.video.status = status
-        self.video.file_size = get_file_size(f"{self.video.output_path}/{self.video.title}")
-        self.file_size_label.setText(convert_bits_to_readable_string(self.video.file_size))
+        self.video.file_size = get_file_size(
+            f"{self.video.output_path}/{self.video.title}")
+        self.file_size_label.setText(
+            convert_bits_to_readable_string(self.video.file_size))
         self.delete_button.setHidden(False)
         self.construct_body()
 
@@ -217,15 +232,20 @@ class Card:
             remove_inside_layout(self.inside_layout)
 
         if self.video.status == "Downloaded":
-            self.download_box.setStyleSheet("background-color:#d9f7d8; border-radius: 5px;")
+            self.download_box.setStyleSheet(
+                "background-color:#d9f7d8; border-radius: 5px;")
         elif self.video.status in "Downloading":
-            self.download_box.setStyleSheet("background-color:#e3e6ff; border-radius: 5px;")
+            self.download_box.setStyleSheet(
+                "background-color:#e3e6ff; border-radius: 5px;")
         elif self.video.status in "Paused":
-            self.download_box.setStyleSheet("background-color:#ffffed; border-radius: 5px;")
+            self.download_box.setStyleSheet(
+                "background-color:#ffffed; border-radius: 5px;")
         elif self.video.status in "Stopped":
-            self.download_box.setStyleSheet("background-color:#ffe3e3; border-radius: 5px;")
+            self.download_box.setStyleSheet(
+                "background-color:#ffe3e3; border-radius: 5px;")
         elif self.video.status in "Queued":
-            self.download_box.setStyleSheet("background-color:#f7f7f7; border-radius: 5px;")
+            self.download_box.setStyleSheet(
+                "background-color:#f7f7f7; border-radius: 5px;")
 
         self.status_label.setText(self.video.status)
 

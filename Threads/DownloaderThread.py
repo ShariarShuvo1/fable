@@ -63,7 +63,8 @@ class DownloaderThread(QThread):
                     ydl.download([self.video_url])
 
                 self.card.pause_button.setDisabled(True)
-                self.file.title = f"{self.file.title[:self.file.title.rfind('.')]}_with_music.mp4"
+                self.file.title = f"{
+                    self.file.title[:self.file.title.rfind('.')]}_with_music.mp4"
                 output_file = f"{self.output_path}/{self.file.title}"
                 self.downloaded_size_updated.emit(["", ""])
 
@@ -76,7 +77,8 @@ class DownloaderThread(QThread):
 
                 audio = audio.set_duration(video.duration)
                 video = video.set_audio(audio)
-                video.write_videofile(output_file, codec='libx264', audio_codec='aac', logger=logger)
+                video.write_videofile(
+                    output_file, codec='libx264', audio_codec='aac', logger=logger)
 
                 os.remove(video_file)
                 os.remove(audio_file)
@@ -106,7 +108,8 @@ class DownloaderThread(QThread):
             total_bytes = d.get("total_bytes")
             downloaded_byte = d.get('downloaded_bytes')
             if total_bytes is not None:
-                self.downloaded_size_updated.emit([downloaded_byte, total_bytes])
+                self.downloaded_size_updated.emit(
+                    [downloaded_byte, total_bytes])
 
     def pause_download(self):
         self._paused = True

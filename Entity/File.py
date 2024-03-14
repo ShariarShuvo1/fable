@@ -20,8 +20,9 @@ class File:
 
     def __str__(self):
         return f"Title: {self.title}, Webpage URL: {self.webpage_url}, Format ID: {self.format_id}, " \
-               f"Download URL: {self.download_url}, Output Path: {self.output_path}, File Type: {self.file_type}, " \
-               f"Status: {self.status}, Added Date: {self.added_date}, File Size: {self.file_size}"
+            f"Download URL: {self.download_url}, Output Path: {self.output_path}, File Type: {self.file_type}, " \
+            f"Status: {self.status}, Added Date: {
+                self.added_date}, File Size: {self.file_size}"
 
     def set_file_size(self, file_size: int) -> None:
         self.file_size = file_size

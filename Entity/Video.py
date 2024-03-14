@@ -18,5 +18,5 @@ class Video:
 
     def __str__(self):
         return f"Video URL: {self.video_url}, Title: {self.title}, Uploader: {self.uploader}, View Count: {self.view_count}, " \
-               f"Duration: {self.duration}, Channel URL: {self.channel_url}, Thumbnail: {self.thumbnail}, " \
-               f"Resolution List: {self.resolution_list}"
+            f"Duration: {self.duration}, Channel URL: {self.channel_url}, Thumbnail: {self.thumbnail}, " \
+            f"Resolution List: {self.resolution_list}"

@@ -13,4 +13,5 @@ class Resolution:
 
     def __str__(self):
         return f"Format ID: {self.format_id}, File Type: {self.file_type}, Extension: {self.ext}, File Size: {self.filesize}, " \
-               f"URL: {self.url}, FPS: {self.fps}, ABR: {self.abr}, VBR: {self.vbr}, Height: {self.height}"
+            f"URL: {self.url}, FPS: {self.fps}, ABR: {
+                self.abr}, VBR: {self.vbr}, Height: {self.height}"

@@ -26,7 +26,8 @@ class SettingsWindow(QDialog):
 
         self.output_path_combo.addItem("Always ask for download path")
         self.output_path_combo.addItem("Choose a default download path")
-        self.output_path_combo.currentIndexChanged.connect(self.output_path_change)
+        self.output_path_combo.currentIndexChanged.connect(
+            self.output_path_change)
 
         self.output_path_layout = QHBoxLayout()
 
@@ -35,7 +36,8 @@ class SettingsWindow(QDialog):
         self.output_path_label.setStyleSheet(OUTPUT_PATH_LABEL_STYLE)
 
         self.output_path_button = QPushButton("Change")
-        self.output_path_button.setIcon(QIcon("./Assets/Icons/folder-icon.png"))
+        self.output_path_button.setIcon(
+            QIcon("./Assets/Icons/folder-icon.png"))
         self.output_path_button.setIconSize(QSize(20, 20))
         self.output_path_button.clicked.connect(self.change_output_path)
         self.output_path_button.setStyleSheet(OUTPUT_PATH_BUTTON_STYLE)
@@ -59,28 +61,41 @@ class SettingsWindow(QDialog):
 
         self.playlist_output_path_combo = QComboBox()
         self.playlist_output_path_combo.setMinimumHeight(40)
-        self.playlist_output_path_combo.setStyleSheet(RESOLUTION_COMBOBOX_STYLESHEET)
-        self.playlist_output_path_combo.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.playlist_output_path_combo.setStyleSheet(
+            RESOLUTION_COMBOBOX_STYLESHEET)
+        self.playlist_output_path_combo.setCursor(
+            Qt.CursorShape.PointingHandCursor)
 
-        self.playlist_output_path_combo.addItem("Always ask for playlist download path")
-        self.playlist_output_path_combo.addItem("Choose a default playlist download path")
-        self.playlist_output_path_combo.currentIndexChanged.connect(self.playlist_output_path_change)
+        self.playlist_output_path_combo.addItem(
+            "Always ask for playlist download path")
+        self.playlist_output_path_combo.addItem(
+            "Choose a default playlist download path")
+        self.playlist_output_path_combo.currentIndexChanged.connect(
+            self.playlist_output_path_change)
 
         self.playlist_output_path_layout = QHBoxLayout()
 
-        self.playlist_output_path_label = QLabel(f"Playlist download path: {get_playlist_output_path()}")
-        self.playlist_output_path_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.playlist_output_path_label = QLabel(
+            f"Playlist download path: {get_playlist_output_path()}")
+        self.playlist_output_path_label.setAlignment(
+            Qt.AlignmentFlag.AlignCenter)
         self.playlist_output_path_label.setStyleSheet(OUTPUT_PATH_LABEL_STYLE)
 
         self.playlist_output_path_button = QPushButton("Change")
-        self.playlist_output_path_button.setIcon(QIcon("./Assets/Icons/folder-icon.png"))
+        self.playlist_output_path_button.setIcon(
+            QIcon("./Assets/Icons/folder-icon.png"))
         self.playlist_output_path_button.setIconSize(QSize(20, 20))
-        self.playlist_output_path_button.clicked.connect(self.change_playlist_output_path)
-        self.playlist_output_path_button.setStyleSheet(OUTPUT_PATH_BUTTON_STYLE)
-        self.playlist_output_path_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.playlist_output_path_button.clicked.connect(
+            self.change_playlist_output_path)
+        self.playlist_output_path_button.setStyleSheet(
+            OUTPUT_PATH_BUTTON_STYLE)
+        self.playlist_output_path_button.setCursor(
+            Qt.CursorShape.PointingHandCursor)
 
-        self.playlist_output_path_layout.addWidget(self.playlist_output_path_label)
-        self.playlist_output_path_layout.addWidget(self.playlist_output_path_button)
+        self.playlist_output_path_layout.addWidget(
+            self.playlist_output_path_label)
+        self.playlist_output_path_layout.addWidget(
+            self.playlist_output_path_button)
         self.playlist_output_path_layout.addStretch()
 
         if get_ask_for_playlist_output_path():
@@ -92,7 +107,8 @@ class SettingsWindow(QDialog):
             self.playlist_output_path_label.setHidden(False)
             self.playlist_output_path_button.setHidden(False)
 
-        self.add_music_combo_label = QLabel("Add audio to video which does not have audio: ")
+        self.add_music_combo_label = QLabel(
+            "Add audio to video which does not have audio: ")
         self.add_music_combo_label.setStyleSheet(SETTINGS_LABEL_STYLE)
 
         self.add_music_combo = QComboBox()
@@ -113,36 +129,50 @@ class SettingsWindow(QDialog):
 
         self.simultaneous_downloads_layout = QHBoxLayout()
 
-        self.maximum_simultaneous_downloads_label = QLabel("Maximum simultaneous downloads: ")
-        self.maximum_simultaneous_downloads_label.setStyleSheet(OUTPUT_PATH_LABEL_STYLE)
+        self.maximum_simultaneous_downloads_label = QLabel(
+            "Maximum simultaneous downloads: ")
+        self.maximum_simultaneous_downloads_label.setStyleSheet(
+            OUTPUT_PATH_LABEL_STYLE)
 
         self.maximum_simultaneous_downloads_input = QSpinBox()
         self.maximum_simultaneous_downloads_input.setRange(-1, 1000)
-        self.maximum_simultaneous_downloads_input.setValue(get_maximum_simultaneous_downloads())
+        self.maximum_simultaneous_downloads_input.setValue(
+            get_maximum_simultaneous_downloads())
         self.maximum_simultaneous_downloads_input.setMaximumWidth(100)
         self.maximum_simultaneous_downloads_input.setFixedHeight(30)
         self.maximum_simultaneous_downloads_input.setSingleStep(1)
-        self.maximum_simultaneous_downloads_input.setStyleSheet(OUTPUT_PATH_LABEL_STYLE)
-        self.maximum_simultaneous_downloads_input.textChanged.connect(self.maximum_simultaneous_downloads_change)
+        self.maximum_simultaneous_downloads_input.setStyleSheet(
+            OUTPUT_PATH_LABEL_STYLE)
+        self.maximum_simultaneous_downloads_input.textChanged.connect(
+            self.maximum_simultaneous_downloads_change)
 
         self.unlimited_label = QLabel("(-1 for unlimited)")
         self.unlimited_label.setStyleSheet(OUTPUT_PATH_LABEL_STYLE)
 
-        self.simultaneous_downloads_layout.addWidget(self.maximum_simultaneous_downloads_label)
-        self.simultaneous_downloads_layout.addWidget(self.maximum_simultaneous_downloads_input)
+        self.simultaneous_downloads_layout.addWidget(
+            self.maximum_simultaneous_downloads_label)
+        self.simultaneous_downloads_layout.addWidget(
+            self.maximum_simultaneous_downloads_input)
         self.simultaneous_downloads_layout.addWidget(self.unlimited_label)
         self.simultaneous_downloads_layout.addStretch()
 
-        self.always_start_audio_story_mode = QCheckBox("Always start in audio story mode")
-        self.always_start_audio_story_mode.setStyleSheet(OUTPUT_PATH_LABEL_STYLE)
-        self.always_start_audio_story_mode.setChecked(get_always_start_with_audio_story_mode())
-        self.always_start_audio_story_mode.stateChanged.connect(self.always_start_audio_story_mode_change)
-        self.always_start_audio_story_mode.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.always_start_audio_story_mode = QCheckBox(
+            "Always start in audio story mode")
+        self.always_start_audio_story_mode.setStyleSheet(
+            OUTPUT_PATH_LABEL_STYLE)
+        self.always_start_audio_story_mode.setChecked(
+            get_always_start_with_audio_story_mode())
+        self.always_start_audio_story_mode.stateChanged.connect(
+            self.always_start_audio_story_mode_change)
+        self.always_start_audio_story_mode.setCursor(
+            Qt.CursorShape.PointingHandCursor)
 
         self.fast_audio_story_mode = QCheckBox("Always fast audio story mode")
         self.fast_audio_story_mode.setStyleSheet(OUTPUT_PATH_LABEL_STYLE)
-        self.fast_audio_story_mode.setChecked(get_always_fast_audio_story_mode())
-        self.fast_audio_story_mode.stateChanged.connect(self.fast_audio_story_mode_change)
+        self.fast_audio_story_mode.setChecked(
+            get_always_fast_audio_story_mode())
+        self.fast_audio_story_mode.stateChanged.connect(
+            self.fast_audio_story_mode_change)
         self.fast_audio_story_mode.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.layout.addWidget(self.output_combo_label)
@@ -169,8 +199,10 @@ class SettingsWindow(QDialog):
         self.footer_layout.addStretch()
         self.restore_settings_button = QPushButton("Restore settings")
         self.restore_settings_button.clicked.connect(self.restore_settings)
-        self.restore_settings_button.setStyleSheet(RESTORE_SETTINGS_BUTTON_STYLE)
-        self.restore_settings_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.restore_settings_button.setStyleSheet(
+            RESTORE_SETTINGS_BUTTON_STYLE)
+        self.restore_settings_button.setCursor(
+            Qt.CursorShape.PointingHandCursor)
         self.footer_layout.addWidget(self.restore_settings_button)
 
         self.done_button = QPushButton("Done")
@@ -183,16 +215,19 @@ class SettingsWindow(QDialog):
         self.setLayout(self.layout)
 
     def fast_audio_story_mode_change(self):
-        set_always_fast_audio_story_mode(self.fast_audio_story_mode.isChecked())
+        set_always_fast_audio_story_mode(
+            self.fast_audio_story_mode.isChecked())
 
     def always_start_audio_story_mode_change(self):
-        set_always_start_with_audio_story_mode(self.always_start_audio_story_mode.isChecked())
+        set_always_start_with_audio_story_mode(
+            self.always_start_audio_story_mode.isChecked())
 
     def output_path_change(self):
         if self.output_path_combo.currentIndex() == 0:
             set_always_ask_for_output_path(True)
             set_output_path(get_default_download_folder())
-            self.output_path_label.setText(f"Download path: {get_output_path()}")
+            self.output_path_label.setText(
+                f"Download path: {get_output_path()}")
             self.output_path_button.setHidden(True)
             self.output_path_label.setHidden(True)
         else:
@@ -204,7 +239,8 @@ class SettingsWindow(QDialog):
         if self.playlist_output_path_combo.currentIndex() == 0:
             set_always_ask_for_playlist_output_path(True)
             set_playlist_output_path(get_default_download_folder())
-            self.playlist_output_path_label.setText(f"Playlist download path: {get_playlist_output_path()}")
+            self.playlist_output_path_label.setText(
+                f"Playlist download path: {get_playlist_output_path()}")
             self.playlist_output_path_button.setHidden(True)
             self.playlist_output_path_label.setHidden(True)
         else:
@@ -233,7 +269,8 @@ class SettingsWindow(QDialog):
         self.output_path_button.setHidden(True)
         self.output_path_label.setHidden(True)
         self.playlist_output_path_combo.setCurrentIndex(0)
-        self.playlist_output_path_label.setText(f"Playlist download path: {get_playlist_output_path()}")
+        self.playlist_output_path_label.setText(
+            f"Playlist download path: {get_playlist_output_path()}")
         self.playlist_output_path_button.setHidden(True)
         self.playlist_output_path_label.setHidden(True)
         self.add_music_combo.setCurrentIndex(0)
@@ -257,7 +294,8 @@ class SettingsWindow(QDialog):
             set_playlist_output_path(get_default_download_folder())
         else:
             set_playlist_output_path(output_path)
-        self.playlist_output_path_label.setText(f"Playlist output path: {get_playlist_output_path()}")
+        self.playlist_output_path_label.setText(
+            f"Playlist output path: {get_playlist_output_path()}")
 
     def maximum_simultaneous_downloads_change(self):
         value = self.maximum_simultaneous_downloads_input.text()
