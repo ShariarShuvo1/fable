@@ -107,6 +107,57 @@ class SettingsWindow(QDialog):
             self.playlist_output_path_label.setHidden(False)
             self.playlist_output_path_button.setHidden(False)
 
+        self.audio_story_output_combo_label = QLabel("Audio Story download path: ")
+        self.audio_story_output_combo_label.setStyleSheet(SETTINGS_LABEL_STYLE)
+
+        self.audio_story_output_path_combo = QComboBox()
+        self.audio_story_output_path_combo.setMinimumHeight(40)
+        self.audio_story_output_path_combo.setStyleSheet(
+            RESOLUTION_COMBOBOX_STYLESHEET)
+        self.audio_story_output_path_combo.setCursor(
+            Qt.CursorShape.PointingHandCursor)
+
+        self.audio_story_output_path_combo.addItem(
+            "Always ask for audio story download path")
+        self.audio_story_output_path_combo.addItem(
+            "Choose a default audio story download path")
+        self.audio_story_output_path_combo.currentIndexChanged.connect(
+            self.audio_story_output_path_change)
+
+        self.audio_story_output_path_layout = QHBoxLayout()
+
+        self.audio_story_output_path_label = QLabel(
+            f"Audio Story download path: {get_audio_story_output_path()}")
+        self.audio_story_output_path_label.setAlignment(
+            Qt.AlignmentFlag.AlignCenter)
+        self.audio_story_output_path_label.setStyleSheet(OUTPUT_PATH_LABEL_STYLE)
+
+        self.audio_story_output_path_button = QPushButton("Change")
+        self.audio_story_output_path_button.setIcon(
+            QIcon("./Assets/Icons/folder-icon.png"))
+        self.audio_story_output_path_button.setIconSize(QSize(20, 20))
+        self.audio_story_output_path_button.clicked.connect(
+            self.change_audio_story_output_path)
+        self.audio_story_output_path_button.setStyleSheet(
+            OUTPUT_PATH_BUTTON_STYLE)
+        self.audio_story_output_path_button.setCursor(
+            Qt.CursorShape.PointingHandCursor)
+
+        self.audio_story_output_path_layout.addWidget(
+            self.audio_story_output_path_label)
+        self.audio_story_output_path_layout.addWidget(
+            self.audio_story_output_path_button)
+        self.audio_story_output_path_layout.addStretch()
+
+        if get_always_ask_for_audio_story_output_path():
+            self.audio_story_output_path_combo.setCurrentIndex(0)
+            self.audio_story_output_path_label.setHidden(True)
+            self.audio_story_output_path_button.setHidden(True)
+        else:
+            self.audio_story_output_path_combo.setCurrentIndex(1)
+            self.audio_story_output_path_label.setHidden(False)
+            self.audio_story_output_path_button.setHidden(False)
+
         self.add_music_combo_label = QLabel(
             "Add audio to video which does not have audio: ")
         self.add_music_combo_label.setStyleSheet(SETTINGS_LABEL_STYLE)
@@ -185,6 +236,11 @@ class SettingsWindow(QDialog):
         self.layout.addSpacing(10)
         self.layout.addLayout(self.playlist_output_path_layout)
         self.layout.addSpacing(10)
+        self.layout.addWidget(self.audio_story_output_combo_label)
+        self.layout.addWidget(self.audio_story_output_path_combo)
+        self.layout.addSpacing(10)
+        self.layout.addLayout(self.audio_story_output_path_layout)
+        self.layout.addSpacing(10)
         self.layout.addWidget(self.add_music_combo_label)
         self.layout.addWidget(self.add_music_combo)
         self.layout.addSpacing(20)
@@ -213,6 +269,29 @@ class SettingsWindow(QDialog):
 
         self.layout.addLayout(self.footer_layout)
         self.setLayout(self.layout)
+
+    def audio_story_output_path_change(self):
+        if self.audio_story_output_path_combo.currentIndex() == 0:
+            set_always_ask_for_audio_story_output_path(True)
+            set_audio_story_output_path(get_default_download_folder())
+            self.audio_story_output_path_label.setText(
+                f"Audio Story download path: {get_audio_story_output_path()}")
+            self.audio_story_output_path_button.setHidden(True)
+            self.audio_story_output_path_label.setHidden(True)
+        else:
+            set_always_ask_for_audio_story_output_path(False)
+            self.audio_story_output_path_button.setHidden(False)
+            self.audio_story_output_path_label.setHidden(False)
+
+    def change_audio_story_output_path(self):
+        output_path = QFileDialog.getExistingDirectory(
+            self, "Select Directory", get_audio_story_output_path())
+        if output_path == "" or output_path == " " or output_path is None or not os.path.exists(output_path):
+            set_audio_story_output_path(get_default_download_folder())
+        else:
+            set_audio_story_output_path(output_path)
+        self.audio_story_output_path_label.setText(
+            f"Audio Story output path: {get_audio_story_output_path()}")
 
     def fast_audio_story_mode_change(self):
         set_always_fast_audio_story_mode(

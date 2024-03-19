@@ -9,7 +9,9 @@ from PyQt6.QtGui import QGuiApplication, QIcon, QPixmap, QMovie
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QLineEdit, \
     QLabel, QComboBox, QMessageBox, QStyleFactory, QStyle, QProgressBar, QScrollArea, QFrame, QFileDialog
 
+from Entity.AudioStory import AudioStory
 from Entity.AudioStoryCard import AudioStoryCard
+from Entity.AudioStoryPreviewCard import AudioStoryPreviewCard
 from Entity.Card import Card
 from Entity.PlaylistCard import PlaylistCard
 from Entity.Resolution import Resolution
@@ -18,6 +20,7 @@ from Entity.Video import Video
 from Entity.File import File
 from Functions.SanitizeFilename import *
 from Functions.youtube_url_checker import *
+from Styles.AudioStyleCardStyle import CLEAR_ALL_BUTTON_STYLESHEET
 from Styles.PlaylistStyle import PLAYLIST_PROGRESS_STYLESHEET
 from Styles.SearchStyle import *
 from Styles.CarouselStyle import *
@@ -77,13 +80,15 @@ class MainWindow(QMainWindow):
                 resolution: Resolution = res
             found = False
             for card in self.download_list:
-                if not res and card.video.webpage_url == video.video_url and card.video.format_id == resolution.format_id:
-                    found = True
-                    break
-                elif res and card.video.webpage_url == video.video_url and card.video.format_id == resolution.format_id and card.video.add_music == add_music_to_playlist:
-                    found = True
-                    break
+                if isinstance(card, Card):
+                    if not res and card.video.webpage_url == video.video_url and card.video.format_id == resolution.format_id:
+                        found = True
+                        break
+                    elif res and card.video.webpage_url == video.video_url and card.video.format_id == resolution.format_id and card.video.add_music == add_music_to_playlist:
+                        found = True
+                        break
             if not found:
+
                 if get_ask_for_output_path() and not res:
                     output_path = QFileDialog.getExistingDirectory(
                         self, "Select Directory", get_output_path())
@@ -114,8 +119,9 @@ class MainWindow(QMainWindow):
                         add_music = True
                         extension = "mp4"
                     for card in self.download_list:
-                        if not res and card.video.webpage_url == video.video_url and card.video.format_id == resolution.format_id and card.video.add_music == add_music:
-                            return
+                        if isinstance(card, Card):
+                            if not res and card.video.webpage_url == video.video_url and card.video.format_id == resolution.format_id and card.video.add_music == add_music:
+                                return
                     title = sanitize_filename(video.title)
                     if resolution.file_type == "audio":
                         title += f"_{int(resolution.abr)}kbps"
@@ -123,7 +129,7 @@ class MainWindow(QMainWindow):
                         title += f"_{resolution.height}p"
                     elif resolution.file_type == "video":
                         title += f"_{resolution.height}p_{
-                            int(resolution.vbr)}kbps"
+                        int(resolution.vbr)}kbps"
                     file_obj: File = File(
                         f"{title}.{extension}",
                         video.video_url,
@@ -150,11 +156,11 @@ class MainWindow(QMainWindow):
         self.search_thread = None
         self.search_playlist_thread = None
 
-        self.download_list: List[Card] = []
+        self.download_list: List[Card | AudioStoryCard] = []
 
         self.playlist_list: List[PlaylistCard] = []
 
-        self.audio_story_list: List[AudioStoryCard] = []
+        self.audio_story_list: List[AudioStoryPreviewCard] = []
 
         self.setWindowTitle("Fable")
         self.setStyleSheet(WINDOW_STYLESHEET)
@@ -246,7 +252,30 @@ class MainWindow(QMainWindow):
         self.audio_story_download_button.setFixedHeight(50)
         self.audio_story_download_button.setCursor(
             Qt.CursorShape.PointingHandCursor)
-        self.audio_story_layout.addWidget(self.audio_story_download_button)
+        self.audio_story_download_button.clicked.connect(self.audio_story_download_clicked)
+
+        self.audio_story_name_input = QLineEdit()
+        self.audio_story_name_input.setPlaceholderText("Enter Audio Story Name (Optional)")
+        self.audio_story_name_input.setStyleSheet(URL_INPUT_STYLESHEET)
+        self.audio_story_name_input.setFixedHeight(50)
+        self.audio_story_name_input.setFixedWidth(350)
+
+        self.clear_audio_story_queue_button = QPushButton("Clear Queue")
+        self.clear_audio_story_queue_button.setStyleSheet(
+            CLEAR_ALL_BUTTON_STYLESHEET)
+        self.clear_audio_story_queue_button.setFixedHeight(50)
+        self.clear_audio_story_queue_button.setFixedWidth(100)
+        self.clear_audio_story_queue_button.setCursor(
+            Qt.CursorShape.PointingHandCursor)
+        self.clear_audio_story_queue_button.clicked.connect(self.clear_audio_story_list)
+
+        self.audio_story_top_row = QHBoxLayout()
+
+        self.audio_story_top_row.addWidget(self.audio_story_name_input)
+        self.audio_story_top_row.addWidget(self.audio_story_download_button)
+        self.audio_story_top_row.addWidget(self.clear_audio_story_queue_button)
+
+        self.audio_story_layout.addLayout(self.audio_story_top_row)
 
         self.audio_story_scroll_layout = QVBoxLayout()
         self.audio_story_scroll_layout.setSpacing(2)
@@ -266,7 +295,7 @@ class MainWindow(QMainWindow):
         self.audio_story_layout.addWidget(self.audio_story_scroll_area)
 
         self.audio_story_widget.setLayout(self.audio_story_layout)
-        # self.audio_story_widget.setHidden(True)
+        self.audio_story_widget.setHidden(True)
         main_layout.addWidget(self.audio_story_widget)
         # Audio Story End ============================================
 
@@ -363,7 +392,7 @@ class MainWindow(QMainWindow):
             Qt.CursorShape.PointingHandCursor)
         (self.playlist_download_button.clicked.connect(
             lambda checked,
-            combo=self.playlist_resolution_combo: self.playlist_download_clicked(combo.currentIndex())
+                   combo=self.playlist_resolution_combo: self.playlist_download_clicked(combo.currentIndex())
         ))
         self.playlist_layout.addWidget(self.playlist_resolution_combo)
         self.playlist_layout.addSpacing(5)
@@ -436,8 +465,49 @@ class MainWindow(QMainWindow):
         container.setLayout(main_layout)
         self.setCentralWidget(container)
 
+    def audio_story_download_clicked(self):
+        output_path = get_audio_story_output_path()
+        if get_always_ask_for_audio_story_output_path():
+            output_path = QFileDialog.getExistingDirectory(
+                self, "Select Directory", get_audio_story_output_path())
+            if output_path == "":
+                output_path = get_audio_story_output_path()
+            if output_path == "":
+                output_path = get_default_download_folder()
+        if output_path:
+            url_list = []
+            for card in self.audio_story_list:
+                if card.add_button.isHidden():
+                    url_list.append(card.video.video_url)
+            if len(url_list) > 0:
+                title = self.audio_story_name_input.text()
+                if len(title) > 0:
+                    title = sanitize_filename(title) + ".mp3"
+                else:
+                    title = None
+                audio_story = AudioStory(
+                    url_list,
+                    "Queued",
+                    datetime.now(),
+                    output_path,
+                    title
+                )
+                audio_story_card = AudioStoryCard(audio_story, self)
+                self.download_list.append(audio_story_card)
+                self.download_list_layout.insertWidget(0, audio_story_card.audio_story_box)
+                self.clear_audio_story_list()
+
+    def delete_audio_story_card(self, card: AudioStoryCard):
+        self.download_list_layout.removeWidget(card.audio_story_box)
+        card.audio_story_box.setParent(None)
+        card.audio_story_box.deleteLater()
+        self.download_list.remove(card)
+
     def audio_story_toggler_clicked(self):
         if self.audio_story_toggler.isChecked():
+            self.search_result.clear()
+            self.update_carousel()
+            self.audio_story_widget.show()
             self.fast_audio_story_mode_label.setDisabled(False)
             self.fast_audio_story_toggler.setDisabled(False)
             self.url_input.setMinimumSize(500, 150)
@@ -447,6 +517,7 @@ class MainWindow(QMainWindow):
             self.search_button.setText("Add")
             self.url_input.setPlaceholderText("Drag and Drop URL here ")
         else:
+            self.audio_story_widget.hide()
             self.fast_audio_story_mode_label.setDisabled(True)
             self.fast_audio_story_toggler.setDisabled(True)
             self.url_input.setMinimumSize(500, 50)
@@ -483,12 +554,21 @@ class MainWindow(QMainWindow):
             video: Video = result_list[0]
             self.add_to_audio_list(video)
         self.url_input.setDisabled(False)
+        self.url_input.setText("")
         self.search_button.setHidden(False)
         self.loading_label.setVisible(False)
         self.search_cancel_button.setHidden(True)
 
+    def clear_audio_story_list(self):
+        for card in self.audio_story_list:
+            self.audio_story_scroll_layout.removeWidget(card.playlist_box)
+            card.playlist_box.setParent(None)
+            card.playlist_box.deleteLater()
+        self.audio_story_list.clear()
+        self.audio_story_name_input.setText("")
+
     def add_to_audio_list(self, video: Video):
-        self.audio_story_list.append(AudioStoryCard(video, self))
+        self.audio_story_list.append(AudioStoryPreviewCard(video, self))
         self.audio_story_scroll_layout.insertWidget(
             len(self.audio_story_list) - 1, self.audio_story_list[-1].playlist_box)
 
@@ -587,6 +667,7 @@ class MainWindow(QMainWindow):
         self.download_list.remove(card)
 
     def download_list_viewer(self, video: File):
+        print(video.title)
         card: Card = Card(video, self.currently_downloading_count, self)
         self.download_list.append(card)
         self.download_list_layout.insertWidget(0, card.download_box)
@@ -616,7 +697,10 @@ class MainWindow(QMainWindow):
                     self.update_playlist_progress)
                 self.search_playlist_thread.start()
             elif self.audio_story_toggler.isChecked():
-                self.audio_story_searched()
+                if is_youtube_url(search_text):
+                    self.audio_story_searched()
+                else:
+                    self.audio_story_video_info_found([])
             else:
                 if self.search_thread and self.search_thread.isRunning():
                     self.search_thread.terminate()
@@ -738,8 +822,8 @@ class MainWindow(QMainWindow):
             download_selected_res = QPushButton("Download")
             (download_selected_res.clicked.connect(
                 lambda checked,
-                video=current_video,
-                combo=resolution_combo: self.start_download(video, combo.currentIndex())
+                       video=current_video,
+                       combo=resolution_combo: self.start_download(video, combo.currentIndex())
             )
             )
 

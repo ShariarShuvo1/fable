@@ -8,7 +8,7 @@ from proglog import ProgressBarLogger
 from Entity.File import File
 
 
-class DownloaderThread(QThread):
+class AudioStoryDownloaderThread(QThread):
     progress_updated = pyqtSignal(int)
     status = pyqtSignal(str)
     status_updated = pyqtSignal(str)
@@ -34,14 +34,12 @@ class DownloaderThread(QThread):
                 'format': self.format_id,
                 'progress_hooks': [self.progress_hook],
             }
-            self.card.pause_button.setDisabled(True)
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 if self.file.file_type == "audio":
                     self.status.emit("Downloading\nAudio")
                 else:
                     self.status.emit("Downloading\nVideo")
                 ydl.download([self.video_url])
-            self.card.pause_button.setDisabled(True)
 
             if self.file.file_type == "video" and self.file.add_music:
                 self.progress_updated.emit(0)
@@ -61,9 +59,8 @@ class DownloaderThread(QThread):
                     self.status.emit("Downloading\nAudio")
                     ydl.download([self.video_url])
 
-                self.card.pause_button.setDisabled(True)
                 self.file.title = f"{
-                    self.file.title[:self.file.title.rfind('.')]}_with_music.mp4"
+                self.file.title[:self.file.title.rfind('.')]}_with_music.mp4"
                 output_file = f"{self.output_path}/{self.file.title}"
                 self.downloaded_size_updated.emit(["", ""])
 
@@ -86,7 +83,6 @@ class DownloaderThread(QThread):
             print(f"Error: {str(e)}")
 
     def progress_hook(self, d):
-        self.card.pause_button.setDisabled(False)
         if self._paused:
             self.pause_requested.emit()
             self.wait_resume()
@@ -123,9 +119,9 @@ class DownloaderThread(QThread):
 
 class MyBarLogger(ProgressBarLogger):
 
-    def __init__(self, thread: DownloaderThread, **kwargs):
+    def __init__(self, thread: AudioStoryDownloaderThread, **kwargs):
         super().__init__(**kwargs)
-        self.thread: DownloaderThread = thread
+        self.thread: AudioStoryDownloaderThread = thread
 
     def callback(self, **changes):
         pass

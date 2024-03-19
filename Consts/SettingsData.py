@@ -45,6 +45,13 @@ if os.path.exists("settings.txt"):
             elif line.startswith("ALWAYS_ASK_FOR_PLAYLIST_OUTPUT_PATH:"):
                 ALWAYS_ASK_FOR_PLAYLIST_OUTPUT_PATH = line.split(
                     ":")[1].strip().lower() == "true"
+            elif line.startswith("AUDIO_STORY_OUTPUT_PATH:"):
+                audio_story_output_path_lst = line.split(":")[1:]
+                AUDIO_STORY_OUTPUT_PATH = ":".join(
+                    audio_story_output_path_lst).strip()
+            elif line.startswith("ALWAYS_ASK_FOR_AUDIO_STORY_OUTPUT_PATH:"):
+                ALWAYS_ASK_FOR_AUDIO_STORY_OUTPUT_PATH = line.split(
+                    ":")[1].strip().lower() == "true"
             elif line.startswith("ALWAYS_START_WITH_AUDIO_STORY_MODE:"):
                 ALWAYS_START_WITH_AUDIO_STORY_MODE = line.split(
                     ":")[1].strip().lower() == "true"
@@ -70,12 +77,53 @@ else:
         ALWAYS_ASK_FOR_PLAYLIST_OUTPUT_PATH = True
         file.write(f"ALWAYS_ASK_FOR_PLAYLIST_OUTPUT_PATH: {
                    ALWAYS_ASK_FOR_PLAYLIST_OUTPUT_PATH}\n")
+        AUDIO_STORY_OUTPUT_PATH = get_default_download_folder()
+        file.write(f"AUDIO_STORY_OUTPUT_PATH: {AUDIO_STORY_OUTPUT_PATH}\n")
+        ALWAYS_ASK_FOR_AUDIO_STORY_OUTPUT_PATH = True
+        file.write(f"ALWAYS_ASK_FOR_AUDIO_STORY_OUTPUT_PATH: {
+                   ALWAYS_ASK_FOR_AUDIO_STORY_OUTPUT_PATH}\n")
         ALWAYS_START_WITH_AUDIO_STORY_MODE = False
         file.write(f"ALWAYS_START_WITH_AUDIO_STORY_MODE: {
                    ALWAYS_START_WITH_AUDIO_STORY_MODE}\n")
         ALWAYS_FAST_AUDIO_STORY_MODE = False
         file.write(f"ALWAYS_FAST_AUDIO_STORY_MODE: {
                    ALWAYS_FAST_AUDIO_STORY_MODE}\n")
+
+
+def set_audio_story_output_path(path: str):
+    global AUDIO_STORY_OUTPUT_PATH
+    AUDIO_STORY_OUTPUT_PATH = path
+    with open("settings.txt", "r") as file:
+        lines = file.readlines()
+    with open("settings.txt", "w") as file:
+        for line in lines:
+            if line.startswith("AUDIO_STORY_OUTPUT_PATH:"):
+                file.write(f"AUDIO_STORY_OUTPUT_PATH: {path}\n")
+            else:
+                file.write(line)
+
+
+def get_audio_story_output_path():
+    return AUDIO_STORY_OUTPUT_PATH
+
+
+def set_always_ask_for_audio_story_output_path(value: bool):
+    global ALWAYS_ASK_FOR_AUDIO_STORY_OUTPUT_PATH
+    ALWAYS_ASK_FOR_AUDIO_STORY_OUTPUT_PATH = value
+    with open("settings.txt", "r") as file:
+        lines = file.readlines()
+    with open("settings.txt", "w") as file:
+        for line in lines:
+            if line.startswith(
+                    "ALWAYS_ASK_FOR_AUDIO_STORY_OUTPUT_PATH:"):
+                file.write(
+                    f"ALWAYS_ASK_FOR_AUDIO_STORY_OUTPUT_PATH: {value}\n")
+            else:
+                file.write(line)
+
+
+def get_always_ask_for_audio_story_output_path():
+    return ALWAYS_ASK_FOR_AUDIO_STORY_OUTPUT_PATH
 
 
 def set_always_fast_audio_story_mode(value: bool):
