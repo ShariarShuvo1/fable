@@ -4,7 +4,6 @@ import eyed3
 from PyQt6.QtCore import QThread, pyqtSignal
 from moviepy.audio.AudioClip import concatenate_audioclips
 from moviepy.audio.io.AudioFileClip import AudioFileClip
-from moviepy.video.io.VideoFileClip import VideoFileClip
 from proglog import ProgressBarLogger
 
 from Entity.Video import Video
@@ -27,15 +26,18 @@ class AudioMergingThread(QThread):
 
         concatenated_audio = concatenate_audioclips(audio_clips)
 
-        concatenated_audio.write_audiofile(self.output_path, codec='mp3', logger=logger)
+        concatenated_audio.write_audiofile(
+            self.output_path, codec='mp3', logger=logger)
         for audio in audio_clips:
             audio.close()
         for audio in self.audio_files:
-            os.remove(audio)
+            if os.path.exists(audio):
+                os.remove(audio)
         audio_file = eyed3.load(self.output_path)
         audio_file.tag.title = self.title
         audio_file.tag.artist = self.main_file.uploader
-        audio_file.tag.images.set(3, self.main_file.thumbnail.content, 'image/jpeg', "Cover")
+        audio_file.tag.images.set(
+            3, self.main_file.thumbnail.content, 'image/jpeg', "Cover")
         audio_file.tag.save()
         self.status.emit("Downloaded")
 

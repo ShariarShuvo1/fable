@@ -1,8 +1,5 @@
-import os
-
 import yt_dlp
 from PyQt6.QtCore import QThread, pyqtSignal
-from moviepy.editor import VideoFileClip, AudioFileClip
 from proglog import ProgressBarLogger
 
 from Entity.File import File
@@ -40,44 +37,6 @@ class AudioStoryDownloaderThread(QThread):
                 else:
                     self.status.emit("Downloading\nVideo")
                 ydl.download([self.video_url])
-
-            if self.file.file_type == "video" and self.file.add_music:
-                self.progress_updated.emit(0)
-                video_file = f"{self.output_path}/{self.file.title}"
-                ydl_opts = {
-                    'format': 'bestaudio/best',
-                    'outtmpl': self.file.output_path + "/" + f'%(title)s{self.file.format_id}.%(ext)s',
-                    'progress_hooks': [self.progress_hook],
-                }
-                self.status.emit("Getting\nAudio Info")
-                ydl = yt_dlp.YoutubeDL(ydl_opts)
-                info = ydl.extract_info(self.video_url, download=False)
-                audio_file = ydl.prepare_filename(info)
-                audio_file = audio_file.replace('\\', '/')
-
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    self.status.emit("Downloading\nAudio")
-                    ydl.download([self.video_url])
-
-                self.file.title = f"{
-                self.file.title[:self.file.title.rfind('.')]}_with_music.mp4"
-                output_file = f"{self.output_path}/{self.file.title}"
-                self.downloaded_size_updated.emit(["", ""])
-
-                self.card.audio_path = audio_file
-                self.card.video_path = video_file
-
-                audio = AudioFileClip(audio_file)
-                video = VideoFileClip(video_file)
-                logger = MyBarLogger(self)
-
-                audio = audio.set_duration(video.duration)
-                video = video.set_audio(audio)
-                video.write_videofile(
-                    output_file, codec='libx264', audio_codec='aac', logger=logger)
-
-                os.remove(video_file)
-                os.remove(audio_file)
             self.status_updated.emit("Downloaded")
         except Exception as e:
             print(f"Error: {str(e)}")
@@ -118,7 +77,6 @@ class AudioStoryDownloaderThread(QThread):
 
 
 class MyBarLogger(ProgressBarLogger):
-
     def __init__(self, thread: AudioStoryDownloaderThread, **kwargs):
         super().__init__(**kwargs)
         self.thread: AudioStoryDownloaderThread = thread

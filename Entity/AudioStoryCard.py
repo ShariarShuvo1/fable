@@ -2,11 +2,9 @@ import os
 from datetime import datetime
 
 import PyQt6
-import eyed3
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QPixmap, QIcon, QCursor
-from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QPushButton, QComboBox, QProgressBar, \
-    QFileDialog, QMessageBox
+from PyQt6.QtCore import QSize
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QPushButton, QProgressBar, QMessageBox
 
 from Entity.AudioStory import AudioStory
 from Entity.Resolution import Resolution
@@ -18,11 +16,8 @@ from Styles.AudioStyleCardStyle import *
 from Threads.AudioMergingThread import AudioMergingThread
 from Threads.SearchThread import SearchThread
 
-from Consts.Constanats import DOWNLOAD_BOX_HEIGHT
 from Entity.File import File
 from Functions.convertBitsToReadableString import convert_bits_to_readable_string
-from Styles.CarouselStyle import CAROUSEL_THUMBNAIL_STYLESHEET, RESOLUTION_COMBOBOX_STYLESHEET, \
-    DOWNLOAD_CURRENT_RES_BUTTON_STYLESHEET
 from Styles.DownloadListStyle import TOOL_ICON_BUTTON_STYLESHEET, VIDEO_TITLE_STYLESHEET, PROGRESS_BAR_STYLESHEET, \
     VIDEO_STATUS_STYLESHEET
 
@@ -70,14 +65,16 @@ class AudioStoryCard:
         self.dummy_progress_bar.setValue(count)
         if all_finished:
             if self.audio_story.title is None:
-                self.audio_story.set_title(f"{sanitize_filename(self.audio_story_info_list[0].title)}.mp3")
+                self.audio_story.set_title(
+                    f"{sanitize_filename(self.audio_story_info_list[0].title)}.mp3")
             self.generate_body()
 
     def __init__(self, audio_story: AudioStory, main_window):
         self.audio_merging_thread = None
         self.main_window = main_window
         self.audio_story = audio_story
-        self.audio_story_info_list: list[Video | None] = [None] * len(self.audio_story.url_list)
+        self.audio_story_info_list: list[Video | None] = [
+            None] * len(self.audio_story.url_list)
         self.thread_list = []
         self.sub_card_list: list[SubCard] = []
         self.total_downloaded = 0
@@ -87,7 +84,8 @@ class AudioStoryCard:
         self.audio_story_box: QWidget = QWidget()
         self.audio_story_box.setStyleSheet(DUMMY_WIDGET_STYLESHEET)
 
-        self.dummy_label = QLabel(f"Getting information for {len(self.audio_story.url_list)} audio story")
+        self.dummy_label = QLabel(f"Getting information for {
+                                  len(self.audio_story.url_list)} audio story")
         self.dummy_label.setStyleSheet(VIDEO_TITLE_STYLESHEET)
 
         self.dummy_progress_bar = QProgressBar()
@@ -99,16 +97,19 @@ class AudioStoryCard:
         for index, url in enumerate(self.audio_story.url_list):
             search_thread = SearchThread(url, index)
             self.thread_list.append(search_thread)
-            self.thread_list[-1].search_finished.connect(lambda result_list: self.on_search_finished(result_list))
+            self.thread_list[-1].search_finished.connect(
+                lambda result_list: self.on_search_finished(result_list))
             self.thread_list[-1].start()
 
         self.completed_button = QPushButton()
+        self.completed_button.setToolTip("Download Finished")
         self.completed_button.setIcon(
             QIcon("./Assets/Icons/completed-icon.png"))
         self.completed_button.setIconSize(self.icon_size)
         self.completed_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
 
         self.play_button: QPushButton = QPushButton()
+        self.play_button.setToolTip("Start Downloading This Audio Story")
         self.play_button.setIcon(QIcon("./Assets/Icons/play-icon.png"))
         self.play_button.setIconSize(self.icon_size)
         self.play_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
@@ -120,6 +121,7 @@ class AudioStoryCard:
         self.title_label.setStyleSheet(VIDEO_TITLE_STYLESHEET)
 
         self.remove_button: QPushButton = QPushButton()
+        self.remove_button.setToolTip("Remove This Audio Story From The List")
         self.remove_button.setIcon(QIcon("./Assets/Icons/cancel-icon.png"))
         self.remove_button.setIconSize(self.icon_size)
         self.remove_button.setStyleSheet(REMOVE_BUTTON_STYLESHEET)
@@ -128,6 +130,7 @@ class AudioStoryCard:
         self.remove_button.clicked.connect(lambda: self.delete_audio_story())
 
         self.delete_button = QPushButton()
+        self.delete_button.setToolTip("Delete This Audio Story From The Disk")
         self.delete_button.setIcon(QIcon("./Assets/Icons/delete-icon.png"))
         self.delete_button.setIconSize(self.icon_size)
         self.delete_button.setStyleSheet(REMOVE_BUTTON_STYLESHEET)
@@ -157,12 +160,16 @@ class AudioStoryCard:
 
         self.datetime_label = QLabel(
             self.audio_story.added_date.strftime("%Y-%m-%d %H:%M:%S"))
+        self.datetime_label.setToolTip(
+            self.audio_story.added_date.strftime("%A, %B %d, %Y %H:%M:%S"))
         self.datetime_label.setStyleSheet(VIDEO_STATUS_STYLESHEET)
         self.datetime_label.setFixedWidth(110)
         self.datetime_label.setAlignment(
             PyQt6.QtCore.Qt.AlignmentFlag.AlignCenter)
 
         self.expand_button: QPushButton = QPushButton()
+        self.expand_button.setToolTip(
+            "Expand to see individual video downloads")
         self.expand_button.setIcon(QIcon("./Assets/Icons/expand-icon.png"))
         self.expand_button.setIconSize(self.icon_size)
         self.expand_button.setStyleSheet(ADD_BUTTON_STYLESHEET)
@@ -171,6 +178,8 @@ class AudioStoryCard:
         self.expand_button.clicked.connect(lambda: self.expand_clicked())
 
         self.shrink_button: QPushButton = QPushButton()
+        self.shrink_button.setToolTip(
+            "Shrink to hide individual video downloads")
         self.shrink_button.setIcon(QIcon("./Assets/Icons/shrink-icon.png"))
         self.shrink_button.setIconSize(self.icon_size)
         self.shrink_button.setStyleSheet(ADD_BUTTON_STYLESHEET)
@@ -230,6 +239,7 @@ class AudioStoryCard:
 
     def delete_audio_story(self):
         msg_box = QMessageBox()
+        msg_box.setWindowIcon(QIcon("./Assets/logo.png"))
         msg_box.setIcon(QMessageBox.Icon.Critical)
         msg_box.setText(
             f"Are you sure you want to delete:\n{self.audio_story.title} ?")
@@ -241,7 +251,8 @@ class AudioStoryCard:
         response = msg_box.exec()
         if response == QMessageBox.StandardButton.Yes:
             if self.audio_story.status == "Downloaded":
-                os.remove(self.audio_story.out_path)
+                if os.path.exists(self.audio_story.out_path):
+                    os.remove(self.audio_story.out_path)
             self.main_window.delete_audio_story_card(self)
 
     def begin_download(self):
@@ -269,14 +280,20 @@ class AudioStoryCard:
             output_path = output_path.replace("\\", "/")
             for sub_card in self.sub_card_list:
                 audio_paths.append(f'{output_path}/{sub_card.video.title}')
-            self.audio_story.out_path = f"{output_path}/{self.audio_story.title}"
+            self.audio_story.out_path = f"{
+                output_path}/{self.audio_story.title}"
             if os.path.exists(self.audio_story.out_path):
-                self.audio_story.title = f"{self.audio_story.title[:-4]}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.mp3"
+                self.audio_story.title = f"{
+                    self.audio_story.title[:-4]}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.mp3"
                 self.title_label.setText(self.audio_story.title)
-                self.audio_story.out_path = f"{output_path}/{self.audio_story.title}"
-            self.audio_merging_thread = AudioMergingThread(audio_paths, f"{self.audio_story.out_path}", self.audio_story_info_list[0], self.audio_story.title)
-            self.audio_merging_thread.progress_updated.connect(self.merging_progress_updated)
-            self.audio_merging_thread.status.connect(self.merging_status_updated)
+                self.audio_story.out_path = f"{
+                    output_path}/{self.audio_story.title}"
+            self.audio_merging_thread = AudioMergingThread(audio_paths, f"{
+                                                           self.audio_story.out_path}", self.audio_story_info_list[0], self.audio_story.title)
+            self.audio_merging_thread.progress_updated.connect(
+                self.merging_progress_updated)
+            self.audio_merging_thread.status.connect(
+                self.merging_status_updated)
             self.audio_merging_thread.start()
 
     def merging_progress_updated(self, progress):
@@ -291,7 +308,8 @@ class AudioStoryCard:
             self.main_row.insertItem(3, self.spacer_item)
             self.progress_bar.hide()
             size_bytes = os.path.getsize(self.audio_story.out_path)
-            self.file_size_label.setText(convert_bits_to_readable_string(size_bytes))
+            self.file_size_label.setText(
+                convert_bits_to_readable_string(size_bytes))
             self.audio_story_box.setStyleSheet(WIDGET_DOWNLOADED_STYLESHEET)
 
     def progress_updated(self):

@@ -1,5 +1,4 @@
-import sys
-from PyQt6.QtWidgets import QApplication, QWidget, QPushButton
+from PyQt6.QtWidgets import QPushButton
 from PyQt6.QtGui import QPainter, QColor, QBrush
 from PyQt6.QtCore import Qt
 

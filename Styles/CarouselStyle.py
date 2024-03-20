@@ -124,6 +124,20 @@ CAROUSEL_TITLE_STYLESHEET: str = """
     }
 """
 
+CAROUSEL_TITLE_BUTTON_STYLESHEET: str = """
+    QPushButton {
+        color: black;
+        text-align: left;
+        font-size: 16px;
+        padding: 0px;
+        margin-top: 0px;
+        font-weight: bold;
+    }
+    QPushButton:hover {
+        color: #9a00bd;
+    }
+"""
+
 CAROUSEL_CHANNEL_STYLESHEET: str = """
     QPushButton {
         font-size: 14px;
@@ -131,6 +145,9 @@ CAROUSEL_CHANNEL_STYLESHEET: str = """
         margin-top: 0px;
         background-color: transparent;
         text-align: left;
+    }
+    QPushButton:hover {
+        color: #9a00bd;
     }
 """
 

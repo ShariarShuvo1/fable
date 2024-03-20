@@ -78,9 +78,10 @@ class DownloaderThread(QThread):
                 video = video.set_audio(audio)
                 video.write_videofile(
                     output_file, codec='libx264', audio_codec='aac', logger=logger)
-
-                os.remove(video_file)
-                os.remove(audio_file)
+                if os.path.exists(video_file):
+                    os.remove(video_file)
+                if os.path.exists(audio_file):
+                    os.remove(audio_file)
             self.status_updated.emit("Downloaded")
         except Exception as e:
             print(f"Error: {str(e)}")

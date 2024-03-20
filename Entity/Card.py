@@ -1,16 +1,16 @@
 import os
 
 import PyQt6
-from PyQt6.QtCore import QSize, pyqtSignal
+from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QLabel, QVBoxLayout, QHBoxLayout, QProgressBar, QPushButton, QWidget, QLayoutItem, \
-    QMessageBox
+from PyQt6.QtWidgets import QLabel, QVBoxLayout, QHBoxLayout, QProgressBar, QPushButton, QWidget, QMessageBox
 
 from Entity.File import File
 from Functions.convertBitsToReadableString import convert_bits_to_readable_string
 from Functions.format_time import format_time
-from Styles.DownloadListStyle import PROGRESS_BAR_STYLESHEET, TOOL_ICON_BUTTON_STYLESHEET, VIDEO_STATUS_STYLESHEET, \
-    VIDEO_SIZE_STYLESHEET, VIDEO_TITLE_STYLESHEET
+from Styles.DownloadListStyle import (PROGRESS_BAR_STYLESHEET, TOOL_ICON_BUTTON_STYLESHEET, VIDEO_STATUS_STYLESHEET,
+                                      VIDEO_SIZE_STYLESHEET, VIDEO_TITLE_STYLESHEET, TOOL_ICON_DELETE_BUTTON_STYLESHEET,
+                                      TOOL_ICON_PLAY_BUTTON_STYLESHEET, TOOL_ICON_PAUSE_BUTTON_STYLESHEET)
 from Consts.Constanats import DOWNLOAD_BOX_HEIGHT
 from Threads.DownloaderThread import DownloaderThread
 from Functions.get_file_size import get_file_size
@@ -44,22 +44,17 @@ class Card:
         self.inside_layout.setSpacing(0)
 
         self.delete_button = QPushButton()
+        self.delete_button.setToolTip("Delete This Download")
         self.delete_button.setIcon(QIcon("./Assets/Icons/delete-icon.png"))
         self.delete_button.setIconSize(self.icon_size)
-        self.delete_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
+        self.delete_button.setStyleSheet(TOOL_ICON_DELETE_BUTTON_STYLESHEET)
         self.delete_button.setCursor(
             PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
         self.delete_button.clicked.connect(lambda: self.delete_download())
         self.delete_button.setHidden(False)
 
-        self.restart_button = QPushButton()
-        self.restart_button.setIcon(QIcon("./Assets/Icons/restart-icon.png"))
-        self.restart_button.setIconSize(self.icon_size)
-        self.restart_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
-        self.restart_button.setCursor(
-            PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
-
         self.completed_button = QPushButton()
+        self.completed_button.setToolTip("Download Completed")
         self.completed_button.setIcon(
             QIcon("./Assets/Icons/completed-icon.png"))
         self.completed_button.setIconSize(self.icon_size)
@@ -72,23 +67,27 @@ class Card:
         self.progress_bar.setStyleSheet(PROGRESS_BAR_STYLESHEET)
 
         self.pause_button = QPushButton()
+        self.pause_button.setToolTip("Pause Download for this video")
         self.pause_button.setIcon(QIcon("./Assets/Icons/pause-icon.png"))
         self.pause_button.setIconSize(self.icon_size)
-        self.pause_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
+        self.pause_button.setStyleSheet(TOOL_ICON_PAUSE_BUTTON_STYLESHEET)
         self.pause_button.setCursor(
             PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
         self.pause_button.clicked.connect(lambda: self.pause_download_video())
 
         self.play_button: QPushButton = QPushButton()
+        self.play_button.setToolTip("Start Download for this video")
         self.play_button.setIcon(QIcon("./Assets/Icons/play-icon.png"))
         self.play_button.setIconSize(self.icon_size)
-        self.play_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
+        self.play_button.setStyleSheet(TOOL_ICON_PLAY_BUTTON_STYLESHEET)
         self.play_button.clicked.connect(lambda: self.start_download())
         self.play_button.setCursor(
             PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
 
         self.datetime_label = QLabel(
             self.video.added_date.strftime("%Y-%m-%d %H:%M:%S"))
+        self.datetime_label.setToolTip(
+            self.video.added_date.strftime("%A, %B %d, %Y %H:%M:%S"))
         self.datetime_label.setStyleSheet(VIDEO_STATUS_STYLESHEET)
         self.datetime_label.setFixedWidth(110)
         self.datetime_label.setAlignment(
@@ -124,6 +123,7 @@ class Card:
             PyQt6.QtCore.Qt.AlignmentFlag.AlignCenter)
 
         self.video_title: QLabel = QLabel(self.video.title)
+        self.video_title.setToolTip(self.video.title)
         self.video_title.setStyleSheet(VIDEO_TITLE_STYLESHEET)
 
         self.inside_download_layout: QHBoxLayout = QHBoxLayout()
@@ -149,6 +149,7 @@ class Card:
     def delete_download(self):
         if (not self.thread.isRunning() and (self.video.status == "Downloaded" or self.video.status == "Queued")) or (self.thread.isRunning() and self.video.status == "Paused"):
             msg_box = QMessageBox()
+            msg_box.setWindowIcon(QIcon("./Assets/logo.png"))
             msg_box.setIcon(QMessageBox.Icon.Critical)
             if self.video.status == "Paused":
                 msg_box.setText(
@@ -206,6 +207,7 @@ class Card:
 
     def start_download(self):
         if self.video.status == "Queued":
+            self.play_button.setToolTip("Resume Download for this video")
             self.video.status = "Downloading"
             self.construct_body()
             self.thread.start()
@@ -253,8 +255,6 @@ class Card:
             self.delete_button.setHidden(False)
             if self.video.status == "Queued":
                 self.inside_layout.addWidget(self.play_button)
-            else:
-                self.inside_layout.addWidget(self.restart_button)
             self.inside_layout.addSpacing(5)
             self.inside_layout.addWidget(self.video_title)
             self.inside_layout.addStretch()
@@ -301,21 +301,10 @@ class Card:
             self.speed_label.setHidden(True)
             self.eta_label.setHidden(True)
             self.pause_button.setHidden(True)
-            self.restart_button.setHidden(True)
 
         if self.video.status == "Paused":
             self.play_button.setHidden(False)
             self.progress_bar.setHidden(False)
-            self.speed_label.setHidden(True)
-            self.eta_label.setHidden(True)
-            self.completed_button.setHidden(True)
-            self.pause_button.setHidden(True)
-            self.restart_button.setHidden(True)
-
-        if self.video.status == "Stopped":
-            self.restart_button.setHidden(False)
-            self.play_button.setHidden(True)
-            self.progress_bar.setHidden(True)
             self.speed_label.setHidden(True)
             self.eta_label.setHidden(True)
             self.completed_button.setHidden(True)
@@ -326,7 +315,6 @@ class Card:
             self.progress_bar.setHidden(False)
             self.speed_label.setHidden(False)
             self.eta_label.setHidden(False)
-            self.restart_button.setHidden(True)
             self.play_button.setHidden(True)
             self.completed_button.setHidden(True)
 
@@ -336,7 +324,6 @@ class Card:
             self.progress_bar.setHidden(True)
             self.speed_label.setHidden(True)
             self.eta_label.setHidden(True)
-            self.restart_button.setHidden(True)
             self.play_button.setHidden(True)
 
         self.inside_download_layout.addLayout(self.inside_layout)

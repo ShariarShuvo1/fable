@@ -1,19 +1,15 @@
-import os
-
 import PyQt6
-from PyQt6.QtCore import QSize, pyqtSignal
+from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QLabel, QVBoxLayout, QHBoxLayout, QProgressBar, QPushButton, QWidget, QLayoutItem, \
-    QMessageBox
+from PyQt6.QtWidgets import QLabel, QVBoxLayout, QHBoxLayout, QProgressBar, QPushButton, QWidget
 
 from Entity.File import File
 from Functions.convertBitsToReadableString import convert_bits_to_readable_string
 from Functions.format_time import format_time
-from Styles.DownloadListStyle import PROGRESS_BAR_STYLESHEET, TOOL_ICON_BUTTON_STYLESHEET, VIDEO_STATUS_STYLESHEET, \
-    VIDEO_SIZE_STYLESHEET, VIDEO_TITLE_STYLESHEET
+from Styles.DownloadListStyle import (PROGRESS_BAR_STYLESHEET, TOOL_ICON_BUTTON_STYLESHEET, VIDEO_STATUS_STYLESHEET,
+                                      VIDEO_SIZE_STYLESHEET, VIDEO_TITLE_STYLESHEET)
 from Consts.Constanats import DOWNLOAD_BOX_HEIGHT
 from Threads.AudioStoryDownloadThread import AudioStoryDownloaderThread
-from Threads.DownloaderThread import DownloaderThread
 from Functions.get_file_size import get_file_size
 
 
@@ -57,6 +53,9 @@ class SubCard:
 
         self.datetime_label = QLabel(
             self.video.added_date.strftime("%Y-%m-%d %H:%M:%S"))
+        self.datetime_label.setToolTip(
+            self.video.added_date.strftime("%A, %B %d, %Y %H:%M:%S")
+        )
         self.datetime_label.setStyleSheet(VIDEO_STATUS_STYLESHEET)
         self.datetime_label.setFixedWidth(110)
         self.datetime_label.setAlignment(

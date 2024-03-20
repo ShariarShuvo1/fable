@@ -23,7 +23,7 @@ SEARCH_BUTTON_STYLESHEET: str = """
         padding: 5px;
         border-radius: 5px;
         background-color: #9a00bd;
-        color: white;
+        color: black;
         font-size: 20px;
         font-weight: bold;
     }
@@ -48,7 +48,7 @@ CANCEL_BUTTON_STYLESHEET: str = """
         padding: 5px;
         border-radius: 5px;
         background-color: #e3002a;
-        color: white;
+        color: black;
         font-size: 20px;
         font-weight: bold;
     }
@@ -57,5 +57,22 @@ CANCEL_BUTTON_STYLESHEET: str = """
     }
     QPushButton:pressed {
         background-color: #c90227;
+    }
+"""
+
+DIRECT_DOWNLOAD_BUTTON_STYLESHEET: str = """
+    QPushButton {
+        padding: 5px;
+        border-radius: 5px;
+        background-color: #00d45f;
+        color: black;
+        font-size: 20px;
+        font-weight: bold;
+    }
+    QPushButton:hover {
+        background-color: #02ab4e;
+    }
+    QPushButton:pressed {
+        background-color: #019142;
     }
 """

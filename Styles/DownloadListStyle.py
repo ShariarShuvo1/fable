@@ -19,10 +19,64 @@ VIDEO_TITLE_STYLESHEET: str = """
     }
 """
 
+VIDEO_TITLE_BUTTON_STYLESHEET: str = """
+    QPushButton {
+        font-size: 14px;
+        font-weight: bold;
+        padding: 0px;
+        color: black;
+        text-align: left;
+    }
+    QPushButton:hover {
+        color: #9a00bd;
+    }
+"""
+
 TOOL_ICON_BUTTON_STYLESHEET: str = """
     QPushButton {
         background-color: transparent;
         border: none;
+    }
+"""
+
+TOOL_ICON_PLAY_BUTTON_STYLESHEET: str = """
+    QPushButton {
+        background-color: #transparent;
+        padding: 5px;
+        border: none;
+    }
+    QPushButton:hover {
+        background-color: #008b26;
+    }
+    QPushButton:pressed {
+        background-color: #007e22;
+    }
+"""
+
+TOOL_ICON_PAUSE_BUTTON_STYLESHEET: str = """
+    QPushButton {
+        background-color: transparent;
+        padding: 5px;
+        border: none;
+    }
+    QPushButton:hover {
+        background-color: #c98c02;
+    }
+    QPushButton:pressed {
+        background-color: #b97e02;
+    }
+"""
+
+TOOL_ICON_DELETE_BUTTON_STYLESHEET: str = """
+    QPushButton {
+        padding: 5px;
+        border: none;
+    }
+    QPushButton:hover {
+        background-color: #d9022a;
+    }
+    QPushButton:pressed {
+        background-color: #c90227;
     }
 """
 
@@ -99,7 +153,7 @@ SCROLL_AREA_STYLESHEET: str = """
 PLAYLIST_DOWNLOAD_BUTTON_STYLESHEET: str = """
     QPushButton {
         background-color: #009614;
-        color: white;
+        color: black;
         font-size: 14px;
         font-weight: bold;
         padding: 5px;

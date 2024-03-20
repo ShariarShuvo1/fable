@@ -57,9 +57,30 @@ CLEAR_ALL_BUTTON_STYLESHEET: str = """
         border-radius: 5px;
         font-size: 14px;
         font-weight: bold;
+        color: black;
     }
     QPushButton:hover {
         background-color: #c92435;
         border-radius: 5px;
+    }
+    QPushButton:pressed {
+        background-color: #ff2e43;
+    }
+"""
+
+AUDIO_STORY_DOWNLOAD_BUTTON_STYLESHEET: str = """
+    QPushButton {
+        background-color: #009614;
+        color: black;
+        font-size: 18px;
+        font-weight: bold;
+        padding: 5px;
+        border-radius: 5px;
+    }
+    QPushButton:hover {
+        background-color: #018212;
+    }
+    QPushButton:pressed {
+        background-color: darkgreen;
     }
 """

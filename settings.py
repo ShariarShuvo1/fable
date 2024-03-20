@@ -1,8 +1,7 @@
 from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtGui import QIcon, QIntValidator, QFont
-from PyQt6.QtWidgets import QDialog, QLabel, QHBoxLayout, QVBoxLayout, QPushButton, QRadioButton, QButtonGroup, \
-    QFileDialog, QCheckBox, QLineEdit, QSpinBox, QComboBox
-
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import (QDialog, QLabel, QHBoxLayout, QVBoxLayout, QPushButton, QFileDialog,
+                             QCheckBox, QSpinBox, QComboBox)
 from Styles.CarouselStyle import RESOLUTION_COMBOBOX_STYLESHEET
 from Styles.SettingsStyle import *
 from Consts.SettingsData import *
@@ -12,8 +11,7 @@ class SettingsWindow(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Settings")
-        self.setMinimumSize(800, 400)
-        self.setMaximumSize(1100, 700)
+        self.setMinimumSize(800, 650)
         self.layout = QVBoxLayout()
 
         self.output_combo_label = QLabel("Download path: ")
@@ -107,7 +105,8 @@ class SettingsWindow(QDialog):
             self.playlist_output_path_label.setHidden(False)
             self.playlist_output_path_button.setHidden(False)
 
-        self.audio_story_output_combo_label = QLabel("Audio Story download path: ")
+        self.audio_story_output_combo_label = QLabel(
+            "Audio Story download path: ")
         self.audio_story_output_combo_label.setStyleSheet(SETTINGS_LABEL_STYLE)
 
         self.audio_story_output_path_combo = QComboBox()
@@ -130,7 +129,8 @@ class SettingsWindow(QDialog):
             f"Audio Story download path: {get_audio_story_output_path()}")
         self.audio_story_output_path_label.setAlignment(
             Qt.AlignmentFlag.AlignCenter)
-        self.audio_story_output_path_label.setStyleSheet(OUTPUT_PATH_LABEL_STYLE)
+        self.audio_story_output_path_label.setStyleSheet(
+            OUTPUT_PATH_LABEL_STYLE)
 
         self.audio_story_output_path_button = QPushButton("Change")
         self.audio_story_output_path_button.setIcon(
@@ -339,6 +339,7 @@ class SettingsWindow(QDialog):
             set_add_music(True)
 
     def restore_settings(self):
+        set_always_ask_for_audio_story_output_path(True)
         set_always_ask_for_output_path(True)
         set_always_ask_for_playlist_output_path(True)
         set_always_ask_to_add_music(True)
@@ -348,10 +349,13 @@ class SettingsWindow(QDialog):
         self.output_path_button.setHidden(True)
         self.output_path_label.setHidden(True)
         self.playlist_output_path_combo.setCurrentIndex(0)
+        self.audio_story_output_path_combo.setCurrentIndex(0)
         self.playlist_output_path_label.setText(
             f"Playlist download path: {get_playlist_output_path()}")
         self.playlist_output_path_button.setHidden(True)
         self.playlist_output_path_label.setHidden(True)
+        self.audio_story_output_path_label.setHidden(True)
+        self.audio_story_output_path_button.setHidden(True)
         self.add_music_combo.setCurrentIndex(0)
         self.maximum_simultaneous_downloads_input.setValue(5)
         self.always_start_audio_story_mode.setChecked(False)

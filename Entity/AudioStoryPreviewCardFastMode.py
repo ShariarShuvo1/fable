@@ -1,59 +1,31 @@
 from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QPixmap, QIcon, QCursor
-from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QPushButton
+from PyQt6.QtGui import QIcon, QCursor
+from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QPushButton
 
-from Entity.PlaylistCard import open_url, format_duration
-from Entity.Video import Video
-from Styles.CarouselStyle import CAROUSEL_THUMBNAIL_STYLESHEET
+from Entity.PlaylistCard import open_url
 from Styles.DownloadListStyle import VIDEO_TITLE_STYLESHEET, VIDEO_TITLE_BUTTON_STYLESHEET
 from Styles.PlaylistCardStyle import (PLAYLIST_CARD_STYLESHEET, REMOVE_BUTTON_STYLESHEET,
                                       ADD_BUTTON_STYLESHEET, PLAYLIST_CARD_DISABLED_STYLESHEET)
 
 
-class AudioStoryPreviewCard:
-    def __init__(self, video: Video, main_window):
+class AudioStoryPreviewCardFastMode:
+    def __init__(self, url: str, main_window):
         self.main_window = main_window
-        self.video: Video = video
+        self.url: str = url
         self.playlist_box: QWidget = QWidget()
         self.playlist_box.setMinimumWidth(480)
         self.playlist_box.setStyleSheet(PLAYLIST_CARD_STYLESHEET)
 
         self.story_number_label: QLabel = QLabel(
-            f"{len(main_window.audio_story_list)+1}")
+            f"{len(main_window.audio_story_list) + 1}.")
         self.story_number_label.setStyleSheet(VIDEO_TITLE_STYLESHEET)
 
-        self.thumbnail_label: QLabel = QLabel()
-        self.thumbnail_label.setWordWrap(True)
-        self.thumbnail_label.setStyleSheet(VIDEO_TITLE_STYLESHEET)
-        self.thumbnail_label.setFixedWidth(90)
-        self.thumbnail_label.setFixedHeight(60)
-        self.thumbnail_label.setStyleSheet(CAROUSEL_THUMBNAIL_STYLESHEET)
-
-        self.pixmap = QPixmap()
-        self.pixmap.loadFromData(video.thumbnail.content)
-        self.pixmap = self.pixmap.scaled(
-            90, 60, Qt.AspectRatioMode.KeepAspectRatioByExpanding)
-        self.thumbnail_label.setPixmap(self.pixmap)
-
-        self.title_label: QPushButton = QPushButton(video.title)
-        self.title_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.title_label.setToolTip(video.title)
+        self.title_label: QPushButton = QPushButton(self.url)
+        self.title_label.setToolTip(self.url)
         self.title_label.setStyleSheet(VIDEO_TITLE_BUTTON_STYLESHEET)
+        self.title_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.title_label.clicked.connect(
-            lambda: open_url(video.video_url))
-
-        self.channel_label: QPushButton = QPushButton(
-            f"Channel: {video.uploader}")
-        self.channel_label.setCursor(
-            QCursor(Qt.CursorShape.PointingHandCursor))
-        self.channel_label.setToolTip(video.uploader)
-        self.channel_label.setStyleSheet(VIDEO_TITLE_BUTTON_STYLESHEET)
-        self.channel_label.clicked.connect(
-            lambda: open_url(video.channel_url))
-
-        self.duration_label: QLabel = QLabel(
-            f"Duration: {format_duration(video.duration)}")
-        self.duration_label.setStyleSheet(VIDEO_TITLE_STYLESHEET)
+            lambda: open_url(self.url))
 
         self.remove_button: QPushButton = QPushButton()
         self.remove_button.setToolTip("Remove")
@@ -80,14 +52,8 @@ class AudioStoryPreviewCard:
         self.main_layout: QHBoxLayout = QHBoxLayout()
         self.main_layout.setContentsMargins(3, 3, 3, 3)
 
-        self.top_right_layout: QVBoxLayout = QVBoxLayout()
-        self.top_right_layout.addWidget(self.title_label)
-        self.top_right_layout.addWidget(self.channel_label)
-        self.top_right_layout.addWidget(self.duration_label)
-
         self.main_layout.addWidget(self.story_number_label)
-        self.main_layout.addWidget(self.thumbnail_label)
-        self.main_layout.addLayout(self.top_right_layout)
+        self.main_layout.addWidget(self.title_label)
 
         self.main_layout.addStretch()
         self.main_layout.addWidget(self.remove_button)
@@ -97,14 +63,13 @@ class AudioStoryPreviewCard:
 
     def remove_video(self):
         self.playlist_box.setStyleSheet(PLAYLIST_CARD_DISABLED_STYLESHEET)
-        self.thumbnail_label.setDisabled(True)
-
+        self.title_label.setDisabled(True)
         self.add_button.setHidden(False)
         self.remove_button.setHidden(True)
 
     def add_video(self):
         self.playlist_box.setStyleSheet(PLAYLIST_CARD_STYLESHEET)
-        self.thumbnail_label.setDisabled(False)
+        self.title_label.setDisabled(False)
 
         self.remove_button.setHidden(False)
         self.add_button.setHidden(True)

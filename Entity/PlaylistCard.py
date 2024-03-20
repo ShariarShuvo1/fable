@@ -1,18 +1,29 @@
 import math
+import webbrowser
 
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QPixmap, QIcon, QCursor
 from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QPushButton, QComboBox
 
-from Consts.Constanats import DOWNLOAD_BOX_HEIGHT
-from Entity.File import File
 from Entity.Video import Video
 from Functions.convertBitsToReadableString import convert_bits_to_readable_string
-from Styles.CarouselStyle import CAROUSEL_THUMBNAIL_STYLESHEET, RESOLUTION_COMBOBOX_STYLESHEET, \
-    DOWNLOAD_CURRENT_RES_BUTTON_STYLESHEET
-from Styles.DownloadListStyle import TOOL_ICON_BUTTON_STYLESHEET, VIDEO_TITLE_STYLESHEET
-from Styles.PlaylistCardStyle import PLAYLIST_CARD_STYLESHEET, REMOVE_BUTTON_STYLESHEET, ADD_BUTTON_STYLESHEET, \
-    DOWNLOAD_BUTTON_STYLESHEET, PLAYLIST_CARD_DISABLED_STYLESHEET
+from Styles.CarouselStyle import CAROUSEL_THUMBNAIL_STYLESHEET, RESOLUTION_COMBOBOX_STYLESHEET
+from Styles.DownloadListStyle import VIDEO_TITLE_STYLESHEET, VIDEO_TITLE_BUTTON_STYLESHEET
+from Styles.PlaylistCardStyle import (PLAYLIST_CARD_STYLESHEET, REMOVE_BUTTON_STYLESHEET, ADD_BUTTON_STYLESHEET,
+                                      DOWNLOAD_BUTTON_STYLESHEET, PLAYLIST_CARD_DISABLED_STYLESHEET)
+
+
+def format_duration(duration):
+    hours, remainder = divmod(duration, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    if hours > 0:
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    else:
+        return f"{minutes:02d}:{seconds:02d}"
+
+
+def open_url(url):
+    webbrowser.open(url)
 
 
 class PlaylistCard:
@@ -36,16 +47,28 @@ class PlaylistCard:
             90, 60, Qt.AspectRatioMode.KeepAspectRatioByExpanding)
         self.thumbnail_label.setPixmap(self.pixmap)
 
-        self.title_label: QLabel = QLabel(video.title)
+        self.title_label: QPushButton = QPushButton(f"{video.title}")
+        self.title_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.title_label.setToolTip(video.title)
-        self.title_label.setStyleSheet(VIDEO_TITLE_STYLESHEET)
+        self.title_label.setStyleSheet(VIDEO_TITLE_BUTTON_STYLESHEET)
+        self.title_label.clicked.connect(
+            lambda: open_url(video.video_url))
 
-        self.channel_label: QLabel = QLabel(f"Channel: {video.uploader}")
+        self.channel_label: QPushButton = QPushButton(
+            f"Channel: {video.uploader}")
+        self.channel_label.setCursor(
+            QCursor(Qt.CursorShape.PointingHandCursor))
         self.channel_label.setToolTip(video.uploader)
-        self.channel_label.setStyleSheet(VIDEO_TITLE_STYLESHEET)
+        self.channel_label.setStyleSheet(VIDEO_TITLE_BUTTON_STYLESHEET)
+        self.channel_label.clicked.connect(
+            lambda: open_url(video.channel_url))
+
+        self.duration_label: QLabel = QLabel(
+            f"Duration: {format_duration(video.duration)}")
+        self.duration_label.setStyleSheet(VIDEO_TITLE_STYLESHEET)
 
         self.remove_button: QPushButton = QPushButton()
-        self.remove_button.setToolTip("Remove")
+        self.remove_button.setToolTip("Remove from Playlist")
         self.remove_button.setFixedHeight(100)
         self.remove_button.clicked.connect(self.remove_video)
         self.remove_button.setIcon(QIcon('./Assets/Icons/cancel-icon.png'))
@@ -55,7 +78,7 @@ class PlaylistCard:
         self.remove_button.setStyleSheet(REMOVE_BUTTON_STYLESHEET)
 
         self.add_button: QPushButton = QPushButton()
-        self.add_button.setToolTip("Add")
+        self.add_button.setToolTip("Add to Playlist")
         self.add_button.setFixedHeight(100)
         self.add_button.clicked.connect(self.add_video)
         self.add_button.setIcon(QIcon('./Assets/Icons/add-icon.png'))
@@ -74,12 +97,15 @@ class PlaylistCard:
         self.top_right_layout: QVBoxLayout = QVBoxLayout()
         self.top_right_layout.addWidget(self.title_label)
         self.top_right_layout.addWidget(self.channel_label)
+        self.top_right_layout.addWidget(self.duration_label)
 
         self.top_layout.addLayout(self.top_right_layout)
 
         self.bottom_layout: QHBoxLayout = QHBoxLayout()
 
         self.resolution_combo = QComboBox()
+        self.resolution_combo.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.resolution_combo.setToolTip("Choose Quality to Download")
         self.resolution_combo.setMinimumHeight(40)
         self.resolution_combo.setStyleSheet(RESOLUTION_COMBOBOX_STYLESHEET)
         self.resolution_combo.setPlaceholderText("Choose Quality")
@@ -111,6 +137,11 @@ class PlaylistCard:
         self.bottom_layout.addWidget(self.resolution_combo)
 
         self.download_selected_res = QPushButton("Download")
+        self.download_selected_res.setIcon(
+            QIcon("./Assets/Icons/search-single-download-icon.png"))
+        self.download_selected_res.setIconSize(QSize(20, 20))
+        self.download_selected_res.setToolTip(
+            "Download Selected Quality in standalone mode")
         (self.download_selected_res.clicked.connect(
             lambda checked,
             video=self.video,
