@@ -178,3 +178,12 @@ PLAYLIST_TITLE_STYLESHEET = """
         background-color: #9a00bd;
     }
 """
+
+SPLITTER_STYLESHEET = """
+    QSplitter::handle {
+        background-color: transparent;
+    }
+    QSplitter::handle:pressed {
+        background-color: #9a00bd;
+    }
+"""

@@ -7,7 +7,7 @@ from typing import List
 from PyQt6.QtCore import Qt, QEvent, QSize, pyqtSignal
 from PyQt6.QtGui import QGuiApplication, QIcon, QPixmap, QMovie
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QLineEdit, \
-    QLabel, QComboBox, QMessageBox, QProgressBar, QScrollArea, QFileDialog
+    QLabel, QComboBox, QMessageBox, QProgressBar, QScrollArea, QFileDialog, QSplitter
 
 from Entity.AudioStory import AudioStory
 from Entity.AudioStoryCard import AudioStoryCard
@@ -170,6 +170,12 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon("./Assets/logo.png"))
 
         main_layout: QVBoxLayout = QVBoxLayout()
+
+        self.splitter = QSplitter()
+        self.splitter.setChildrenCollapsible(False)
+        self.splitter.setHandleWidth(5)
+        self.splitter.setStyleSheet(SPLITTER_STYLESHEET)
+        self.splitter.setOrientation(Qt.Orientation.Vertical)
 
         # Search Widget Began ========================================
         url_layout: QHBoxLayout = QHBoxLayout()
@@ -335,15 +341,16 @@ class MainWindow(QMainWindow):
 
         self.audio_story_widget.setLayout(self.audio_story_layout)
         self.audio_story_widget.setHidden(True)
-        main_layout.addWidget(self.audio_story_widget)
         # Audio Story End ============================================
 
         # Download List Began ============================================
+        self.main_body_widget = QWidget()
         self.main_body_frame = QHBoxLayout()
         self.main_body_frame.setContentsMargins(0, 0, 0, 0)
         self.main_body_frame.setSpacing(0)
 
         self.download_frame = QVBoxLayout()
+        self.download_widget = QWidget()
 
         self.download_title = QLabel("Download List")
         self.download_title.setStyleSheet(DOWNLOAD_TITLE_STYLESHEET)
@@ -368,12 +375,13 @@ class MainWindow(QMainWindow):
         self.download_list_container.setLayout(self.download_list_layout)
         self.scroll_area.setWidget(self.download_list_container)
         self.download_frame.addWidget(self.scroll_area)
-
-        self.main_body_frame.addLayout(self.download_frame)
+        self.download_frame.setSpacing(0)
+        self.download_frame.setContentsMargins(0, 0, 0, 0)
+        self.download_widget.setLayout(self.download_frame)
 
         # Playlist Start ============================================
         self.playlist_widget = QWidget()
-        self.playlist_widget.setFixedWidth(500)
+        self.playlist_widget.setMinimumWidth(500)
         self.playlist_layout = QVBoxLayout()
         self.playlist_layout.setContentsMargins(5, 0, 0, 0)
 
@@ -450,10 +458,26 @@ class MainWindow(QMainWindow):
 
         self.playlist_widget.setLayout(self.playlist_layout)
         self.playlist_widget.setHidden(True)
-        self.main_body_frame.addWidget(self.playlist_widget)
-        # Playlist End ============================================
 
-        main_layout.addLayout(self.main_body_frame)
+        self.download_playlist_splitter = QSplitter()
+        self.download_playlist_splitter.setChildrenCollapsible(False)
+        self.download_playlist_splitter.setHandleWidth(5)
+        self.download_playlist_splitter.setStyleSheet(SPLITTER_STYLESHEET)
+        self.download_playlist_splitter.setOrientation(
+            Qt.Orientation.Horizontal)
+        self.download_playlist_splitter.addWidget(self.download_widget)
+        self.download_playlist_splitter.addWidget(self.playlist_widget)
+        self.main_body_frame.addWidget(self.download_playlist_splitter)
+        self.main_body_frame.setSpacing(0)
+        self.main_body_frame.setContentsMargins(0, 0, 0, 0)
+
+        # Playlist End ============================================
+        self.main_body_widget.setLayout(self.main_body_frame)
+
+        self.splitter.addWidget(self.audio_story_widget)
+        self.splitter.addWidget(self.main_body_widget)
+
+        main_layout.addWidget(self.splitter)
         # Download List End ============================================
 
         # Footer Start ============================================

@@ -31,7 +31,7 @@ class PlaylistCard:
         self.main_window = main_window
         self.video: Video = video
         self.playlist_box: QWidget = QWidget()
-        self.playlist_box.setFixedWidth(480)
+        self.playlist_box.setMinimumWidth(480)
         self.playlist_box.setStyleSheet(PLAYLIST_CARD_STYLESHEET)
         # self.playlist_box.setFixedHeight(DOWNLOAD_BOX_HEIGHT)
 
