@@ -21,7 +21,9 @@ from Entity.Video import Video
 from Entity.File import File
 from Functions.SanitizeFilename import *
 from Functions.youtube_url_checker import *
+from Resource.bracu import BRACU_COURSE_DATA
 from Styles.AudioStyleCardStyle import CLEAR_ALL_BUTTON_STYLESHEET, AUDIO_STORY_DOWNLOAD_BUTTON_STYLESHEET
+from Styles.BRACU_STYLE import LOAD_BUTTON_STYLESHEET
 from Styles.PlaylistStyle import PLAYLIST_PROGRESS_STYLESHEET
 from Styles.SearchStyle import *
 from Styles.CarouselStyle import *
@@ -385,11 +387,72 @@ class MainWindow(QMainWindow):
         self.playlist_layout = QVBoxLayout()
         self.playlist_layout.setContentsMargins(5, 0, 0, 0)
 
+        # BRACU start =============================================
+
+        self.bracu_course_combo = QComboBox()
+        self.bracu_course_combo.setToolTip("Choose a Course")
+        self.bracu_course_combo.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.bracu_course_combo.setMinimumHeight(40)
+        self.bracu_course_combo.setStyleSheet(RESOLUTION_COMBOBOX_STYLESHEET)
+        self.bracu_course_combo.setPlaceholderText("Choose a Course")
+
+        for course, info in BRACU_COURSE_DATA.items():
+            self.bracu_course_combo.addItem(course)
+
+        self.bracu_course_combo.currentIndexChanged.connect(
+            self.bracu_course_combo_changed)
+
+        self.bracu_faculty_combo = QComboBox()
+        self.bracu_faculty_combo.setToolTip("Choose a Faculty")
+        self.bracu_faculty_combo.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.bracu_faculty_combo.setMinimumHeight(40)
+        self.bracu_faculty_combo.setStyleSheet(RESOLUTION_COMBOBOX_STYLESHEET)
+        self.bracu_faculty_combo.setPlaceholderText("Choose a Faculty")
+
+        self.bracu_faculty_combo.currentIndexChanged.connect(
+            self.bracu_faculty_combo_changed)
+
+        self.bracu_playlist_combo = QComboBox()
+        self.bracu_playlist_combo.setToolTip("Choose a Playlist")
+        self.bracu_playlist_combo.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.bracu_playlist_combo.setMinimumHeight(40)
+        self.bracu_playlist_combo.setStyleSheet(RESOLUTION_COMBOBOX_STYLESHEET)
+        self.bracu_playlist_combo.setPlaceholderText("Choose a Playlist")
+
+        self.bracu_playlist_load_button = QPushButton("Load")
+        self.bracu_playlist_load_button.setFixedWidth(100)
+        self.bracu_playlist_load_button.setToolTip("Load Playlist")
+        self.bracu_playlist_load_button.setCursor(
+            Qt.CursorShape.PointingHandCursor)
+        self.bracu_playlist_load_button.setMinimumHeight(40)
+        self.bracu_playlist_load_button.setStyleSheet(LOAD_BUTTON_STYLESHEET)
+        self.bracu_playlist_load_button.clicked.connect(self.load_clicked)
+
+        self.bracu_widget = QWidget()
+        self.bracu_layout = QVBoxLayout()
+
+        bracu_top_row = QHBoxLayout()
+        bracu_top_row.addWidget(self.bracu_course_combo)
+        bracu_top_row.addWidget(self.bracu_faculty_combo)
+
+        bracu_bottom_row = QHBoxLayout()
+        bracu_bottom_row.addWidget(self.bracu_playlist_combo)
+        bracu_bottom_row.addWidget(self.bracu_playlist_load_button)
+
+        self.bracu_layout.addLayout(bracu_top_row)
+        self.bracu_layout.addLayout(bracu_bottom_row)
+
+        self.bracu_widget.setLayout(self.bracu_layout)
+        self.bracu_widget.hide()
+
+        # BRACU end =============================================
+
         self.playlist_title = QLabel("Playlist")
         self.playlist_title.setStyleSheet(PLAYLIST_TITLE_STYLESHEET)
         self.playlist_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.playlist_title.setFixedHeight(50)
         self.playlist_layout.addWidget(self.playlist_title)
+        self.playlist_layout.addWidget(self.bracu_widget)
         self.playlist_layout.setSpacing(0)
 
         self.playlist_progress = QProgressBar()
@@ -548,6 +611,51 @@ class MainWindow(QMainWindow):
         container: QWidget = QWidget()
         container.setLayout(main_layout)
         self.setCentralWidget(container)
+
+    def load_clicked(self):
+        if self.bracu_playlist_combo.currentIndex() >= 0 and self.bracu_faculty_combo.currentIndex() >= 0 and self.bracu_course_combo.currentIndex() >= 0:
+            if self.search_thread and self.search_thread.isRunning():
+                self.search_thread.terminate()
+            if self.search_playlist_thread and self.search_playlist_thread.isRunning():
+                self.search_playlist_thread.terminate()
+            self.url_input.setDisabled(False)
+            self.search_button.setHidden(False)
+            self.loading_label.setVisible(False)
+            self.search_cancel_button.setHidden(True)
+            self.clear_playlist()
+            if self.audio_story_toggler.isChecked():
+                self.direct_download_button.show()
+            search_text = BRACU_COURSE_DATA[self.bracu_course_combo.currentText(
+            )][self.bracu_faculty_combo.currentText()][self.bracu_playlist_combo.currentText()]
+            self.playlist_widget.setHidden(False)
+            self.playlist_progress.setHidden(False)
+            if self.search_playlist_thread and self.search_playlist_thread.isRunning():
+                self.search_playlist_thread.terminate()
+            self.search_playlist_thread = SearchPlaylistThread(search_text)
+            self.search_playlist_thread.search_finished.connect(
+                self.on_playlist_search_finished)
+            self.search_playlist_thread.total_videos.connect(
+                self.total_video_in_playlist)
+            self.search_playlist_thread.completed_videos.connect(
+                self.update_playlist_progress)
+            self.search_playlist_thread.start()
+
+    def bracu_course_combo_changed(self, index):
+        self.bracu_playlist_combo.clear()
+        self.bracu_faculty_combo.disconnect()
+        self.bracu_faculty_combo.clear()
+        self.bracu_faculty_combo.currentIndexChanged.connect(
+            self.bracu_faculty_combo_changed)
+        course = self.bracu_course_combo.currentText()
+        for faculty, info in BRACU_COURSE_DATA[course].items():
+            self.bracu_faculty_combo.addItem(faculty)
+
+    def bracu_faculty_combo_changed(self, index):
+        course = self.bracu_course_combo.currentText()
+        faculty = self.bracu_faculty_combo.currentText()
+        self.bracu_playlist_combo.clear()
+        for playlist in BRACU_COURSE_DATA[course][faculty]:
+            self.bracu_playlist_combo.addItem(playlist)
 
     def audio_story_download_clicked(self, direct=False):
         if direct and (len(self.url_input.text()) == 0 or not is_youtube_url(self.url_input.text())):
@@ -723,6 +831,9 @@ class MainWindow(QMainWindow):
         self.loading_label.setVisible(False)
         self.search_cancel_button.setHidden(True)
         self.clear_playlist()
+        self.bracu_widget.hide()
+        self.playlist_title.setText("Playlist")
+        self.playlist_title.setStyleSheet(PLAYLIST_TITLE_STYLESHEET)
         self.playlist_widget.setHidden(True)
         if self.audio_story_toggler.isChecked():
             self.direct_download_button.show()
@@ -814,17 +925,25 @@ class MainWindow(QMainWindow):
         self.download_list.remove(card)
 
     def download_list_viewer(self, video: File):
-        print(video.title)
         card: Card = Card(video, self.currently_downloading_count, self)
         self.download_list.append(card)
         self.download_list_layout.insertWidget(0, card.download_box)
 
     def search_clicked(self):
+        self.bracu_widget.hide()
+        self.playlist_title.setText("Playlist")
+        self.playlist_title.setStyleSheet(PLAYLIST_TITLE_STYLESHEET)
         self.search_result = []
         self.array_changed.emit()
         self.clear_playlist()
         self.playlist_widget.setHidden(True)
         search_text: str = self.url_input.text()
+        if search_text.upper() == "BRACU" and not self.audio_story_toggler.isChecked():
+            self.playlist_title.setText("BRACU Playlist")
+            self.playlist_title.setStyleSheet(BRACU_PLAYLIST_TITLE_STYLESHEET)
+            self.bracu_widget.show()
+            self.playlist_widget.show()
+            return
         if len(search_text) > 0:
             self.search_button.setHidden(True)
             self.search_cancel_button.setHidden(False)
@@ -1089,6 +1208,6 @@ if __name__ == "__main__":
     Consts.Constanats.SCREEN_HEIGHT = primary_screen.height()
 
     window: MainWindow = MainWindow()
-    # window.showMaximized()
+    window.showMaximized()
     window.show()
     sys.exit(app.exec())

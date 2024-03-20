@@ -179,6 +179,18 @@ PLAYLIST_TITLE_STYLESHEET = """
     }
 """
 
+BRACU_PLAYLIST_TITLE_STYLESHEET = """
+    QLabel {
+        font-size: 24px;
+        margin-top: 10px;
+        border-top-left-radius: 5px;
+        border-top-right-radius: 5px;
+        font-weight: bold;
+        color: white;
+        background-color: #2E86C1;
+    }
+"""
+
 SPLITTER_STYLESHEET = """
     QSplitter::handle {
         background-color: transparent;
