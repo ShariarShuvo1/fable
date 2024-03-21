@@ -68,27 +68,26 @@ RESOLUTION_COMBOBOX_STYLESHEET = """
     }
 
     QScrollBar:vertical {
-        background: #de8df0;
-        width: 15px;
+        border: none;
+        background-color: #5a026e;
+        width: 10px;
+        margin: 0px;
     }
 
     QScrollBar::handle:vertical {
-        background: #9a00bd;
-        border-radius: 7px;
+        background-color: #9a00bd;
+        min-height: 20px;
     }
 
     QScrollBar::add-line:vertical {
-        background: none;
-        height: 20px;
-        subcontrol-position: bottom;
-        subcontrol-origin: margin;
+        height: 0px;
     }
 
     QScrollBar::sub-line:vertical {
+        height: 0px;
+    }
+    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
         background: none;
-        height: 20px;
-        subcontrol-position: top;
-        subcontrol-origin: margin;
     }
 
     QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {

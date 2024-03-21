@@ -13,12 +13,13 @@ class AudioMergingThread(QThread):
     progress_updated = pyqtSignal(int)
     status = pyqtSignal(str)
 
-    def __init__(self, audio_files: list[str], output_path: str, main_file: Video, title: str, parent=None):
+    def __init__(self, audio_files: list[str], output_path: str, main_file: Video, title: str, author: str, parent=None):
         super().__init__(parent)
         self.audio_files = audio_files
         self.output_path = output_path
         self.main_file: Video = main_file
         self.title = title
+        self.author = author
 
     def run(self):
         audio_clips = [AudioFileClip(path) for path in self.audio_files]
@@ -35,7 +36,7 @@ class AudioMergingThread(QThread):
                 os.remove(audio)
         audio_file = eyed3.load(self.output_path)
         audio_file.tag.title = self.title
-        audio_file.tag.artist = self.main_file.uploader
+        audio_file.tag.artist = self.author
         audio_file.tag.images.set(
             3, self.main_file.thumbnail.content, 'image/jpeg', "Cover")
         audio_file.tag.save()

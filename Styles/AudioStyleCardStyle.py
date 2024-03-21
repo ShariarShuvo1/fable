@@ -64,7 +64,7 @@ CLEAR_ALL_BUTTON_STYLESHEET: str = """
         border-radius: 5px;
     }
     QPushButton:pressed {
-        background-color: #ff2e43;
+        background-color: #a31d2b;
     }
 """
 

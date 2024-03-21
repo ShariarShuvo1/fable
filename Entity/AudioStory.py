@@ -10,6 +10,7 @@ class AudioStory:
                  added_date: datetime,
                  out_path: str,
                  title: str = None,
+                 author: str = None,
                  file_list: list[File] = None,
                  ):
         self.url_list = url_list
@@ -17,6 +18,7 @@ class AudioStory:
         self.added_date = added_date
         self.out_path = out_path
         self.title = title
+        self.author = author
         self.file_list = file_list
 
     def set_title(self, title: str):

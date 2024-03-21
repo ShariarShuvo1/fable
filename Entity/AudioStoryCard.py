@@ -288,8 +288,14 @@ class AudioStoryCard:
                 self.title_label.setText(self.audio_story.title)
                 self.audio_story.out_path = f"{
                     output_path}/{self.audio_story.title}"
+            if self.audio_story.author is None:
+                author = self.audio_story_info_list[0].uploader
+            else:
+                author = self.audio_story.author
             self.audio_merging_thread = AudioMergingThread(audio_paths, f"{
-                                                           self.audio_story.out_path}", self.audio_story_info_list[0], self.audio_story.title)
+                                                           self.audio_story.out_path}",
+                                                           self.audio_story_info_list[0],
+                                                           self.audio_story.title, author)
             self.audio_merging_thread.progress_updated.connect(
                 self.merging_progress_updated)
             self.audio_merging_thread.status.connect(

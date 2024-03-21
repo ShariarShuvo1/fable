@@ -7,28 +7,19 @@ from Entity.Video import Video
 from Functions.youtube_url_checker import is_youtube_url
 
 
-def search_youtube(query, max_results=10, result_list=None):
+def search_channel(url, begin, finish, result_list=None):
     ydl_opts = {
         'quiet': True,
-        'default_search': 'auto',
-        'noplaylist': True,
-        'max_results': max_results,
+        'playlist_items': f'{begin}-{finish}',
         'geo_bypass': True,
     }
-
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
-            if 'youtube.com' in query or 'youtu.be' in query:
-                search_results = ydl.extract_info(query, download=False)
-            else:
-                search_results = ydl.extract_info(
-                    f"ytsearch{max_results}:{query}", download=False)
+            if 'youtube.com' in url or 'youtu.be' in url:
+                search_results = ydl.extract_info(url, download=False)
             if result_list is not None:
                 videos = []
-                if 'youtube.com' in query or 'youtu.be' in query:
-                    videos.append(search_results)
-                else:
-                    videos.extend(search_results.get('entries', []))
+                videos.extend(search_results.get('entries', []))
                 for video in videos:
                     res_dict = {
                         "video": [],
@@ -59,8 +50,8 @@ def search_youtube(query, max_results=10, result_list=None):
                     resolution_list.extend(res_dict["audio"])
                     resolution_list.extend(res_dict["mix"])
                     resolution_list.extend(res_dict["video"])
-                    if is_youtube_url(query):
-                        video_url = query
+                    if is_youtube_url(url):
+                        video_url = url
                     else:
                         video_url = video.get('webpage_url')
                     video_obj = Video(
@@ -74,6 +65,6 @@ def search_youtube(query, max_results=10, result_list=None):
                         resolution_list=resolution_list
                     )
                     result_list.append(video_obj)
-
         except yt_dlp.DownloadError as e:
             print("Error:", e)
+            return

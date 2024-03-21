@@ -7,7 +7,7 @@ from typing import List
 from PyQt6.QtCore import Qt, QEvent, QSize, pyqtSignal
 from PyQt6.QtGui import QGuiApplication, QIcon, QPixmap, QMovie
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QLineEdit, \
-    QLabel, QComboBox, QMessageBox, QProgressBar, QScrollArea, QFileDialog, QSplitter
+    QLabel, QComboBox, QMessageBox, QProgressBar, QScrollArea, QFileDialog, QSplitter, QSpinBox
 
 from Entity.AudioStory import AudioStory
 from Entity.AudioStoryCard import AudioStoryCard
@@ -21,9 +21,10 @@ from Entity.Video import Video
 from Entity.File import File
 from Functions.SanitizeFilename import *
 from Functions.youtube_url_checker import *
+from Resource.audio_story_channel import AUDIO_STORY_CHANNEL
 from Resource.bracu import BRACU_COURSE_DATA
 from Styles.AudioStyleCardStyle import CLEAR_ALL_BUTTON_STYLESHEET, AUDIO_STORY_DOWNLOAD_BUTTON_STYLESHEET
-from Styles.BRACU_STYLE import LOAD_BUTTON_STYLESHEET
+from Styles.BRACU_STYLE import LOAD_BUTTON_STYLESHEET, OPEN_BROWSER_BUTTON_STYLESHEET
 from Styles.PlaylistStyle import PLAYLIST_PROGRESS_STYLESHEET
 from Styles.SearchStyle import *
 from Styles.CarouselStyle import *
@@ -31,6 +32,8 @@ from Styles.DownloadListStyle import *
 from Styles.FooterStyle import *
 import Consts.Constanats
 from Consts.SettingsData import *
+from Styles.SettingsStyle import OUTPUT_PATH_LABEL_STYLE
+from Threads.ChannelSearchThread import ChannelSearchThread
 from Threads.SearchPlaylistThread import SearchPlaylistThread
 from Threads.SearchThread import SearchThread
 from settings import SettingsWindow
@@ -133,7 +136,7 @@ class MainWindow(QMainWindow):
                         title += f"_{resolution.height}p"
                     elif resolution.file_type == "video":
                         title += f"_{resolution.height}p_{
-                            int(resolution.vbr)}kbps"
+                        int(resolution.vbr)}kbps"
                     file_obj: File = File(
                         f"{title}.{extension}",
                         video.video_url,
@@ -166,6 +169,8 @@ class MainWindow(QMainWindow):
 
         self.audio_story_list: List[AudioStoryPreviewCard |
                                     AudioStoryPreviewCardFastMode] = []
+
+        self.channel_video_list: List[AudioStoryPreviewCard] = []
 
         self.setWindowTitle("Fable")
         self.setStyleSheet(WINDOW_STYLESHEET)
@@ -279,7 +284,7 @@ class MainWindow(QMainWindow):
         self.audio_story_widget = QWidget()
         self.audio_story_widget.setMinimumWidth(500)
         self.audio_story_layout = QVBoxLayout()
-        self.audio_story_layout.setContentsMargins(5, 0, 0, 0)
+        self.audio_story_layout.setContentsMargins(0, 0, 0, 0)
 
         self.audio_story_download_button = QPushButton("Download Selected")
         self.audio_story_download_button.setIcon(
@@ -302,7 +307,16 @@ class MainWindow(QMainWindow):
             "Enter Audio Story Name (Optional)")
         self.audio_story_name_input.setStyleSheet(URL_INPUT_STYLESHEET)
         self.audio_story_name_input.setFixedHeight(50)
-        self.audio_story_name_input.setFixedWidth(350)
+        self.audio_story_name_input.setMaximumWidth(350)
+
+        self.audio_story_author_name_input = QLineEdit()
+        self.audio_story_author_name_input.setToolTip("Enter Author Name\nThis will be the name of the final Audio "
+                                                      "Story file\n If not provided, Channel name will be used")
+        self.audio_story_author_name_input.setPlaceholderText(
+            "Enter Author Name (Optional)")
+        self.audio_story_author_name_input.setStyleSheet(URL_INPUT_STYLESHEET)
+        self.audio_story_author_name_input.setFixedHeight(50)
+        self.audio_story_author_name_input.setMaximumWidth(300)
 
         self.clear_audio_story_queue_button = QPushButton("Clear Queue")
         self.clear_audio_story_queue_button.setToolTip(
@@ -319,6 +333,7 @@ class MainWindow(QMainWindow):
         self.audio_story_top_row = QHBoxLayout()
 
         self.audio_story_top_row.addWidget(self.audio_story_name_input)
+        self.audio_story_top_row.addWidget(self.audio_story_author_name_input)
         self.audio_story_top_row.addWidget(self.audio_story_download_button)
         self.audio_story_top_row.addWidget(self.clear_audio_story_queue_button)
 
@@ -339,8 +354,114 @@ class MainWindow(QMainWindow):
         self.audio_story_container = QWidget()
         self.audio_story_container.setLayout(self.audio_story_scroll_layout)
         self.audio_story_scroll_area.setWidget(self.audio_story_container)
-        self.audio_story_layout.addWidget(self.audio_story_scroll_area)
 
+        # Channel List Began ============================================
+
+        self.channel_search_thread: ChannelSearchThread | None = None
+
+        self.channel_list_widget = QWidget()
+        self.channel_list_layout = QVBoxLayout()
+        self.channel_list_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.channel_language_combo = QComboBox()
+        self.channel_language_combo.setToolTip("Choose a Language")
+        self.channel_language_combo.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.channel_language_combo.setMinimumHeight(40)
+        self.channel_language_combo.setStyleSheet(RESOLUTION_COMBOBOX_STYLESHEET)
+        self.channel_language_combo.setPlaceholderText("Choose a Language")
+        self.channel_language_combo.currentIndexChanged.connect(
+            self.channel_language_combo_changed)
+
+        for language, channels in AUDIO_STORY_CHANNEL.items():
+            self.channel_language_combo.addItem(language)
+
+        self.channel_list_combo = QComboBox()
+        self.channel_list_combo.setToolTip("Choose a Channel")
+        self.channel_list_combo.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.channel_list_combo.setMinimumHeight(40)
+        self.channel_list_combo.setStyleSheet(RESOLUTION_COMBOBOX_STYLESHEET)
+        self.channel_list_combo.setPlaceholderText("Choose a Channel")
+
+        self.channel_search_begin = QSpinBox()
+        self.channel_search_begin.setToolTip("Search Begin")
+        self.channel_search_begin.setRange(1, 1000000)
+        self.channel_search_begin.setValue(1)
+        self.channel_search_begin.setMinimumWidth(100)
+        self.channel_search_begin.setFixedHeight(40)
+        self.channel_search_begin.setStyleSheet(OUTPUT_PATH_LABEL_STYLE)
+        self.channel_search_begin.setPrefix("Start: ")
+        self.channel_search_begin.setSingleStep(1)
+
+        self.channel_search_end = QSpinBox()
+        self.channel_search_end.setToolTip("Search End")
+        self.channel_search_end.setRange(1, 1000000)
+        self.channel_search_end.setValue(10)
+        self.channel_search_end.setMinimumWidth(100)
+        self.channel_search_end.setFixedHeight(40)
+        self.channel_search_end.setStyleSheet(OUTPUT_PATH_LABEL_STYLE)
+        self.channel_search_end.setPrefix("End: ")
+        self.channel_search_end.setSingleStep(1)
+
+        self.channel_load_button = QPushButton("Load")
+        self.channel_load_button.setMinimumHeight(40)
+        self.channel_load_button.setFixedWidth(100)
+        self.channel_load_button.setToolTip("Load Channel")
+        self.channel_load_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.channel_load_button.setStyleSheet(LOAD_BUTTON_STYLESHEET)
+        self.channel_load_button.clicked.connect(self.load_channel_clicked)
+
+        self.channel_search_progress = QProgressBar()
+        self.channel_search_progress.setFixedHeight(30)
+        self.channel_search_progress.setRange(0, 100)
+        self.channel_search_progress.setValue(0)
+        self.channel_search_progress.setStyleSheet(PLAYLIST_PROGRESS_STYLESHEET)
+        self.channel_search_progress.setHidden(True)
+
+        self.channel_top_row = QHBoxLayout()
+        self.channel_top_row.addWidget(self.channel_language_combo)
+        self.channel_top_row.addWidget(self.channel_list_combo)
+
+        self.channel_mid_row = QHBoxLayout()
+        self.channel_mid_row.addWidget(self.channel_search_begin)
+        self.channel_mid_row.addWidget(self.channel_search_end)
+        self.channel_mid_row.addWidget(self.channel_load_button)
+
+        self.channel_list_layout.addLayout(self.channel_top_row)
+        self.channel_list_layout.addLayout(self.channel_mid_row)
+        self.channel_list_layout.addWidget(self.channel_search_progress)
+
+        self.channel_scroll_area = QScrollArea()
+        self.channel_scroll_area.setWidgetResizable(True)
+        self.channel_scroll_area.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.channel_scroll_area.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.channel_scroll_area.setStyleSheet(SCROLL_AREA_STYLESHEET)
+
+        self.channel_scroll_layout = QVBoxLayout()
+        self.channel_scroll_layout.setSpacing(2)
+        self.channel_scroll_layout.addStretch()
+
+        self.channel_container = QWidget()
+        self.channel_container.setLayout(self.channel_scroll_layout)
+        self.channel_scroll_area.setWidget(self.channel_container)
+        self.channel_list_layout.addWidget(self.channel_scroll_area)
+
+        self.channel_list_widget.setLayout(self.channel_list_layout)
+
+        # Channel List End ============================================
+
+        self.audio_story_channel_splitter = QSplitter()
+        self.audio_story_channel_splitter.setChildrenCollapsible(False)
+        self.audio_story_channel_splitter.setHandleWidth(5)
+        self.audio_story_channel_splitter.setStyleSheet(SPLITTER_STYLESHEET)
+        self.audio_story_channel_splitter.setOrientation(
+            Qt.Orientation.Horizontal)
+        self.audio_story_channel_splitter.addWidget(self.audio_story_scroll_area)
+        self.audio_story_channel_splitter.addWidget(self.channel_list_widget)
+        self.audio_story_channel_splitter.setSizes([1000, 500])
+
+        self.audio_story_layout.addWidget(self.audio_story_channel_splitter)
         self.audio_story_widget.setLayout(self.audio_story_layout)
         self.audio_story_widget.setHidden(True)
         # Audio Story End ============================================
@@ -428,6 +549,19 @@ class MainWindow(QMainWindow):
         self.bracu_playlist_load_button.setStyleSheet(LOAD_BUTTON_STYLESHEET)
         self.bracu_playlist_load_button.clicked.connect(self.load_clicked)
 
+        self.bracu_open_browser_button = QPushButton()
+        self.bracu_open_browser_button.setIcon(QIcon("./Assets/Icons/yt-icon.png"))
+        self.bracu_open_browser_button.setIconSize(QSize(35, 35))
+        self.bracu_open_browser_button.setToolTip("Open Playlist in Browser\n"
+                                                  "Source: https://docs.google.com/spreadsheets/u/1/d/1_"
+                                                  "wSiAzh9iBO2Dktt_V1rGAyJGvRRr-TQyUzuLPNmFSo/htmlview?fbclid="
+                                                  "IwAR2WgOStJe2UrGIM2WMx9fzG6WqMAWbbeAQ9Xe3Z1DTJRFe1NM5dveZnKVM")
+        # I do not own this spreadsheet. All credit goes to the owner for the spreadsheet
+        self.bracu_open_browser_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.bracu_open_browser_button.setFixedSize(40, 40)
+        self.bracu_open_browser_button.setStyleSheet(OPEN_BROWSER_BUTTON_STYLESHEET)
+        self.bracu_open_browser_button.clicked.connect(self.bracu_open_browser_button_click)
+
         self.bracu_widget = QWidget()
         self.bracu_layout = QVBoxLayout()
 
@@ -438,6 +572,7 @@ class MainWindow(QMainWindow):
         bracu_bottom_row = QHBoxLayout()
         bracu_bottom_row.addWidget(self.bracu_playlist_combo)
         bracu_bottom_row.addWidget(self.bracu_playlist_load_button)
+        bracu_bottom_row.addWidget(self.bracu_open_browser_button)
 
         self.bracu_layout.addLayout(bracu_top_row)
         self.bracu_layout.addLayout(bracu_bottom_row)
@@ -513,7 +648,7 @@ class MainWindow(QMainWindow):
             Qt.CursorShape.PointingHandCursor)
         (self.playlist_download_button.clicked.connect(
             lambda checked,
-            combo=self.playlist_resolution_combo: self.playlist_download_clicked(combo.currentIndex())
+                   combo=self.playlist_resolution_combo: self.playlist_download_clicked(combo.currentIndex())
         ))
         self.playlist_layout.addWidget(self.playlist_resolution_combo)
         self.playlist_layout.addSpacing(5)
@@ -530,6 +665,7 @@ class MainWindow(QMainWindow):
             Qt.Orientation.Horizontal)
         self.download_playlist_splitter.addWidget(self.download_widget)
         self.download_playlist_splitter.addWidget(self.playlist_widget)
+        self.download_playlist_splitter.setSizes([1000, 500])
         self.main_body_frame.addWidget(self.download_playlist_splitter)
         self.main_body_frame.setSpacing(0)
         self.main_body_frame.setContentsMargins(0, 0, 0, 0)
@@ -585,6 +721,9 @@ class MainWindow(QMainWindow):
             not get_always_start_with_audio_story_mode())
         self.fast_audio_story_toggler.setDisabled(
             not get_always_start_with_audio_story_mode())
+        self.fast_audio_story_toggler.clicked.connect(
+            self.fast_audio_story_toggler_clicked)
+        self.fast_audio_story_toggler_clicked()
 
         self.audio_story_mode_label = QLabel("Audio Story Mode")
         self.audio_story_mode_label.setToolTip(
@@ -611,6 +750,76 @@ class MainWindow(QMainWindow):
         container: QWidget = QWidget()
         container.setLayout(main_layout)
         self.setCentralWidget(container)
+
+    def clear_channel_video_list(self):
+        if self.channel_search_thread is not None and self.channel_search_thread.isRunning():
+            self.channel_search_thread.terminate()
+        for card in self.channel_video_list:
+            self.channel_scroll_layout.removeWidget(card.playlist_box)
+            card.playlist_box.deleteLater()
+        self.channel_video_list.clear()
+        self.channel_search_progress.setValue(0)
+        self.channel_search_progress.setHidden(True)
+
+    def load_channel_clicked(self):
+        if self.channel_language_combo.currentIndex() >= 0 and self.channel_list_combo.currentIndex() >= 0:
+            if self.channel_search_thread is not None and self.channel_search_thread.isRunning():
+                msg_box = QMessageBox()
+                msg_box.setWindowIcon(QIcon("./Assets/logo.png"))
+                msg_box.setIcon(QMessageBox.Icon.Warning)
+                msg_box.setText("A search is already in progress\n Are you sure you want to cancel it?")
+                msg_box.setWindowTitle("Search in Progress")
+                msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+                response = msg_box.exec()
+                if response == QMessageBox.StandardButton.Yes:
+                    self.clear_channel_video_list()
+                else:
+                    return
+            else:
+                self.clear_channel_video_list()
+            self.channel_search_progress.setValue(0)
+            self.channel_search_progress.setHidden(False)
+            self.channel_search_progress.setRange(0, self.channel_search_end.value() - self.channel_search_begin.value() + 1)
+            url = AUDIO_STORY_CHANNEL[self.channel_language_combo.currentText()][self.channel_list_combo.currentText()]
+            self.channel_search_thread = ChannelSearchThread(
+                url,
+                self.channel_search_begin.value(),
+                self.channel_search_end.value()
+            )
+            self.channel_search_thread.search_finished.connect(
+                self.on_channel_search_finished)
+            self.channel_search_thread.found_one.connect(
+                self.found_one_channel)
+            self.channel_search_thread.start()
+
+    def found_one_channel(self, result: list[Video]):
+        self.channel_search_progress.setValue(self.channel_search_progress.value() + 1)
+        if len(result) > 0:
+            self.channel_video_list.append(AudioStoryPreviewCard(result[0], self))
+            self.channel_scroll_layout.insertWidget(
+                len(self.channel_video_list) - 1, self.channel_video_list[-1].playlist_box)
+
+    def on_channel_search_finished(self):
+        self.channel_search_progress.setHidden(True)
+
+
+    def fast_audio_story_toggler_clicked(self):
+        if self.fast_audio_story_toggler.isChecked():
+            self.channel_list_widget.hide()
+        else:
+            self.channel_list_widget.show()
+
+    def channel_language_combo_changed(self, index):
+        self.channel_list_combo.clear()
+        language = self.channel_language_combo.currentText()
+        for channel in AUDIO_STORY_CHANNEL[language]:
+            self.channel_list_combo.addItem(channel)
+
+    def bracu_open_browser_button_click(self):
+        if self.bracu_playlist_combo.currentIndex() >= 0 and self.bracu_faculty_combo.currentIndex() >= 0 and self.bracu_course_combo.currentIndex() >= 0:
+            open_channel(BRACU_COURSE_DATA[self.bracu_course_combo.currentText(
+            )][self.bracu_faculty_combo.currentText()][self.bracu_playlist_combo.currentText()])
 
     def load_clicked(self):
         if self.bracu_playlist_combo.currentIndex() >= 0 and self.bracu_faculty_combo.currentIndex() >= 0 and self.bracu_course_combo.currentIndex() >= 0:
@@ -689,12 +898,16 @@ class MainWindow(QMainWindow):
                     title = sanitize_filename(title) + ".mp3"
                 else:
                     title = None
+                author = self.audio_story_author_name_input.text()
+                if len(author) == 0:
+                    author = None
                 audio_story = AudioStory(
                     url_list,
                     "Queued",
                     datetime.now(),
                     output_path,
-                    title
+                    title,
+                    author
                 )
                 audio_story_card = AudioStoryCard(audio_story, self)
                 self.download_list.append(audio_story_card)
@@ -1095,8 +1308,8 @@ class MainWindow(QMainWindow):
             download_selected_res.setToolTip("Download Selected Quality")
             (download_selected_res.clicked.connect(
                 lambda checked,
-                video=current_video,
-                combo=resolution_combo: self.start_download(video, combo.currentIndex())
+                       video=current_video,
+                       combo=resolution_combo: self.start_download(video, combo.currentIndex())
             )
             )
 
@@ -1208,6 +1421,6 @@ if __name__ == "__main__":
     Consts.Constanats.SCREEN_HEIGHT = primary_screen.height()
 
     window: MainWindow = MainWindow()
-    window.showMaximized()
+    # window.showMaximized()
     window.show()
     sys.exit(app.exec())
