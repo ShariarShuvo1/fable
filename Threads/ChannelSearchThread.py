@@ -17,5 +17,6 @@ class ChannelSearchThread(QThread):
         for i in range(self.begin, self.finish + 1):
             result_list = []
             search_channel(self.url, i, i, result_list)
+            result_list.append(i)
             self.found_one.emit(result_list)
         self.search_finished.emit(True)

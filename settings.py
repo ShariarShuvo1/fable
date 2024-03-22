@@ -34,6 +34,7 @@ class SettingsWindow(QDialog):
         self.output_path_label.setStyleSheet(OUTPUT_PATH_LABEL_STYLE)
 
         self.output_path_button = QPushButton("Change")
+        self.output_path_button.setToolTip("Change download path")
         self.output_path_button.setIcon(
             QIcon("./Assets/Icons/folder-icon.png"))
         self.output_path_button.setIconSize(QSize(20, 20))
@@ -80,6 +81,8 @@ class SettingsWindow(QDialog):
         self.playlist_output_path_label.setStyleSheet(OUTPUT_PATH_LABEL_STYLE)
 
         self.playlist_output_path_button = QPushButton("Change")
+        self.playlist_output_path_button.setToolTip(
+            "Change playlist download path")
         self.playlist_output_path_button.setIcon(
             QIcon("./Assets/Icons/folder-icon.png"))
         self.playlist_output_path_button.setIconSize(QSize(20, 20))
@@ -133,6 +136,8 @@ class SettingsWindow(QDialog):
             OUTPUT_PATH_LABEL_STYLE)
 
         self.audio_story_output_path_button = QPushButton("Change")
+        self.audio_story_output_path_button.setToolTip(
+            "Change audio story download path")
         self.audio_story_output_path_button.setIcon(
             QIcon("./Assets/Icons/folder-icon.png"))
         self.audio_story_output_path_button.setIconSize(QSize(20, 20))
@@ -207,6 +212,29 @@ class SettingsWindow(QDialog):
         self.simultaneous_downloads_layout.addWidget(self.unlimited_label)
         self.simultaneous_downloads_layout.addStretch()
 
+        self.maximum_search_result_label = QLabel(
+            "Maximum search results: ")
+        self.maximum_search_result_label.setStyleSheet(OUTPUT_PATH_LABEL_STYLE)
+
+        self.maximum_search_result_input = QSpinBox()
+        self.maximum_search_result_input.setRange(1, 1000000)
+        self.maximum_search_result_input.setValue(
+            get_maximum_search_results())
+        self.maximum_search_result_input.setMaximumWidth(100)
+        self.maximum_search_result_input.setFixedHeight(30)
+        self.maximum_search_result_input.setSingleStep(1)
+        self.maximum_search_result_input.setStyleSheet(
+            OUTPUT_PATH_LABEL_STYLE)
+        self.maximum_search_result_input.textChanged.connect(
+            self.maximum_search_result_change)
+
+        self.maximum_search_result_layout = QHBoxLayout()
+        self.maximum_search_result_layout.addWidget(
+            self.maximum_search_result_label)
+        self.maximum_search_result_layout.addWidget(
+            self.maximum_search_result_input)
+        self.maximum_search_result_layout.addStretch()
+
         self.always_start_audio_story_mode = QCheckBox(
             "Always start in audio story mode")
         self.always_start_audio_story_mode.setStyleSheet(
@@ -243,9 +271,11 @@ class SettingsWindow(QDialog):
         self.layout.addSpacing(10)
         self.layout.addWidget(self.add_music_combo_label)
         self.layout.addWidget(self.add_music_combo)
-        self.layout.addSpacing(20)
+        self.layout.addSpacing(10)
         self.layout.addLayout(self.simultaneous_downloads_layout)
-        self.layout.addSpacing(20)
+        self.layout.addSpacing(10)
+        self.layout.addLayout(self.maximum_search_result_layout)
+        self.layout.addSpacing(10)
         self.layout.addWidget(self.always_start_audio_story_mode)
         self.layout.addSpacing(10)
         self.layout.addWidget(self.fast_audio_story_mode)
@@ -254,6 +284,8 @@ class SettingsWindow(QDialog):
         self.footer_layout = QHBoxLayout()
         self.footer_layout.addStretch()
         self.restore_settings_button = QPushButton("Restore settings")
+        self.restore_settings_button.setToolTip(
+            "Restore all settings to default")
         self.restore_settings_button.clicked.connect(self.restore_settings)
         self.restore_settings_button.setStyleSheet(
             RESTORE_SETTINGS_BUTTON_STYLE)
@@ -262,6 +294,7 @@ class SettingsWindow(QDialog):
         self.footer_layout.addWidget(self.restore_settings_button)
 
         self.done_button = QPushButton("Done")
+        self.done_button.setToolTip("Close settings")
         self.done_button.setStyleSheet(DONE_SETTINGS_BUTTON_STYLE)
         self.done_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.done_button.clicked.connect(self.close)
@@ -269,6 +302,10 @@ class SettingsWindow(QDialog):
 
         self.layout.addLayout(self.footer_layout)
         self.setLayout(self.layout)
+
+    def maximum_search_result_change(self):
+        value = self.maximum_search_result_input.text()
+        set_maximum_search_results(int(value))
 
     def audio_story_output_path_change(self):
         if self.audio_story_output_path_combo.currentIndex() == 0:
@@ -344,6 +381,7 @@ class SettingsWindow(QDialog):
         set_always_ask_for_playlist_output_path(True)
         set_always_ask_to_add_music(True)
         set_maximum_simultaneous_downloads(5)
+        set_maximum_search_results(10)
         self.output_path_combo.setCurrentIndex(0)
         self.output_path_label.setText(f"Download path: {get_output_path()}")
         self.output_path_button.setHidden(True)
@@ -358,6 +396,7 @@ class SettingsWindow(QDialog):
         self.audio_story_output_path_button.setHidden(True)
         self.add_music_combo.setCurrentIndex(0)
         self.maximum_simultaneous_downloads_input.setValue(5)
+        self.maximum_search_result_input.setValue(10)
         self.always_start_audio_story_mode.setChecked(False)
         self.fast_audio_story_mode.setChecked(False)
 

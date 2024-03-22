@@ -14,11 +14,13 @@ from Entity.AudioStoryCard import AudioStoryCard
 from Entity.AudioStoryPreviewCard import AudioStoryPreviewCard
 from Entity.AudioStoryPreviewCardFastMode import AudioStoryPreviewCardFastMode
 from Entity.Card import Card
+from Entity.ChannelVideoPreviewCard import ChannelVideoPreviewCard
 from Entity.PlaylistCard import PlaylistCard
 from Entity.Resolution import Resolution
 from Entity.ToggleButton import ToggleButton
 from Entity.Video import Video
 from Entity.File import File
+from Entity.VideoViewer import VideoViewer
 from Functions.SanitizeFilename import *
 from Functions.youtube_url_checker import *
 from Resource.audio_story_channel import AUDIO_STORY_CHANNEL
@@ -170,7 +172,7 @@ class MainWindow(QMainWindow):
         self.audio_story_list: List[AudioStoryPreviewCard |
                                     AudioStoryPreviewCardFastMode] = []
 
-        self.channel_video_list: List[AudioStoryPreviewCard] = []
+        self.channel_video_list: List[ChannelVideoPreviewCard] = []
 
         self.setWindowTitle("Fable")
         self.setStyleSheet(WINDOW_STYLESHEET)
@@ -393,6 +395,7 @@ class MainWindow(QMainWindow):
         self.channel_search_begin.setSingleStep(1)
 
         self.channel_search_end = QSpinBox()
+        self.channel_search_end.installEventFilter(self)
         self.channel_search_end.setToolTip("Search End")
         self.channel_search_end.setRange(1, 1000000)
         self.channel_search_end.setValue(10)
@@ -780,7 +783,8 @@ class MainWindow(QMainWindow):
                 self.clear_channel_video_list()
             self.channel_search_progress.setValue(0)
             self.channel_search_progress.setHidden(False)
-            self.channel_search_progress.setRange(0, self.channel_search_end.value() - self.channel_search_begin.value() + 1)
+            self.channel_search_progress.setRange(0,
+                                                  self.channel_search_end.value() - self.channel_search_begin.value() + 1)
             url = AUDIO_STORY_CHANNEL[self.channel_language_combo.currentText()][self.channel_list_combo.currentText()]
             self.channel_search_thread = ChannelSearchThread(
                 url,
@@ -795,14 +799,14 @@ class MainWindow(QMainWindow):
 
     def found_one_channel(self, result: list[Video]):
         self.channel_search_progress.setValue(self.channel_search_progress.value() + 1)
-        if len(result) > 0:
-            self.channel_video_list.append(AudioStoryPreviewCard(result[0], self))
+        if len(result) > 1:
+            number = result[1]
+            self.channel_video_list.append(ChannelVideoPreviewCard(result[0], self, number))
             self.channel_scroll_layout.insertWidget(
                 len(self.channel_video_list) - 1, self.channel_video_list[-1].playlist_box)
 
     def on_channel_search_finished(self):
         self.channel_search_progress.setHidden(True)
-
 
     def fast_audio_story_toggler_clicked(self):
         if self.fast_audio_story_toggler.isChecked():
@@ -866,11 +870,12 @@ class MainWindow(QMainWindow):
         for playlist in BRACU_COURSE_DATA[course][faculty]:
             self.bracu_playlist_combo.addItem(playlist)
 
-    def audio_story_download_clicked(self, direct=False):
-        if direct and (len(self.url_input.text()) == 0 or not is_youtube_url(self.url_input.text())):
-            return
-        elif not direct and len(self.audio_story_list) == 0:
-            return
+    def audio_story_download_clicked(self, direct=False, url: str | None = None):
+        if url is None:
+            if direct and (len(self.url_input.text()) == 0 or not is_youtube_url(self.url_input.text())):
+                return
+            elif not direct and len(self.audio_story_list) == 0:
+                return
         output_path = get_audio_story_output_path()
         if get_always_ask_for_audio_story_output_path():
             output_path = QFileDialog.getExistingDirectory(
@@ -882,7 +887,7 @@ class MainWindow(QMainWindow):
         if output_path:
             url_list = []
             if direct:
-                url_list.append(self.url_input.text())
+                url_list.append(url)
             else:
                 if not self.fast_audio_story_toggler.isChecked():
                     for card in self.audio_story_list:
@@ -909,6 +914,10 @@ class MainWindow(QMainWindow):
                     title,
                     author
                 )
+                for audio_story_card in self.download_list:
+                    if isinstance(audio_story_card, AudioStoryCard):
+                        if audio_story_card.audio_story.url_list == audio_story.url_list:
+                            return
                 audio_story_card = AudioStoryCard(audio_story, self)
                 self.download_list.append(audio_story_card)
                 self.download_list_layout.insertWidget(
@@ -1029,10 +1038,21 @@ class MainWindow(QMainWindow):
             len(self.audio_story_list) - 1, self.audio_story_list[-1].playlist_box)
 
     def add_to_audio_list(self, video: Video):
-        self.fast_audio_story_toggler.setDisabled(True)
-        self.audio_story_list.append(AudioStoryPreviewCard(video, self))
-        self.audio_story_scroll_layout.insertWidget(
-            len(self.audio_story_list) - 1, self.audio_story_list[-1].playlist_box)
+        found = False
+        for card in self.audio_story_list:
+            if isinstance(card, AudioStoryPreviewCard):
+                if card.video.video_url == video.video_url:
+                    found = True
+                    break
+            elif isinstance(card, AudioStoryPreviewCardFastMode):
+                if card.url == video.video_url:
+                    found = True
+                    break
+        if not found:
+            self.fast_audio_story_toggler.setDisabled(True)
+            self.audio_story_list.append(AudioStoryPreviewCard(video, self))
+            self.audio_story_scroll_layout.insertWidget(
+                len(self.audio_story_list) - 1, self.audio_story_list[-1].playlist_box)
 
     def cancel_search_clicked(self):
         if self.search_thread and self.search_thread.isRunning():
@@ -1143,6 +1163,7 @@ class MainWindow(QMainWindow):
         self.download_list_layout.insertWidget(0, card.download_box)
 
     def search_clicked(self):
+        self.current_index = 0
         self.bracu_widget.hide()
         self.playlist_title.setText("Playlist")
         self.playlist_title.setStyleSheet(PLAYLIST_TITLE_STYLESHEET)
@@ -1184,7 +1205,7 @@ class MainWindow(QMainWindow):
                 if self.search_thread and self.search_thread.isRunning():
                     self.search_thread.terminate()
                 self.search_thread = SearchThread(
-                    search_text, Consts.Constanats.TOTAL_ELEMENT_FOR_CAROUSEL)
+                    search_text, get_maximum_search_results())
                 self.search_thread.search_finished.connect(
                     self.on_search_finished)
                 self.search_thread.start()
@@ -1258,12 +1279,17 @@ class MainWindow(QMainWindow):
             first_row.setSpacing(0)
 
             thumbnail_label = QLabel()
+            thumbnail_label.setCursor(Qt.CursorShape.PointingHandCursor)
+            thumbnail_label.setToolTip("Click for preview")
+            thumbnail_label.mousePressEvent = lambda event: self.thumbnail_clicked(current_video)
             thumbnail_label.setFixedHeight(90)
             thumbnail_label.setStyleSheet(CAROUSEL_THUMBNAIL_STYLESHEET)
             pixmap = QPixmap()
             pixmap.loadFromData(current_video.thumbnail.content)
             pixmap = pixmap.scaled(120, 90, Qt.AspectRatioMode.KeepAspectRatio)
             thumbnail_label.setPixmap(pixmap)
+            thumbnail_label.setFixedSize(120, 90)
+            thumbnail_label.setScaledContents(True)
             first_row.addWidget(thumbnail_label)
 
             resolution_layout = QVBoxLayout()
@@ -1319,7 +1345,7 @@ class MainWindow(QMainWindow):
             download_selected_res.setCursor(Qt.CursorShape.PointingHandCursor)
             resolution_layout.addWidget(download_selected_res)
             first_row.addLayout(resolution_layout)
-            first_row.addStretch()
+            # first_row.addStretch()
 
             inside_carousel_layout.addLayout(first_row)
 
@@ -1354,6 +1380,10 @@ class MainWindow(QMainWindow):
             carousel_box.setLayout(inside_carousel_layout)
             self.carousel_layout.addWidget(carousel_box)
 
+    def thumbnail_clicked(self, video: Video):
+        viewer = VideoViewer(video)
+        viewer.exec()
+
     def show_previous(self):
         if self.current_index > 0:
             self.current_index -= 1
@@ -1362,12 +1392,17 @@ class MainWindow(QMainWindow):
     def show_next(self):
         if (
                 (self.current_index + Consts.Constanats.NUMBER_OF_ELEMENT_FOR_CAROUSEL) <
-                Consts.Constanats.TOTAL_ELEMENT_FOR_CAROUSEL
+                get_maximum_search_results()
         ):
             self.current_index += 1
             self.update_carousel()
 
     def eventFilter(self, obj, event):
+        if obj is self.channel_search_end or obj is self.channel_search_begin:
+            if event.type() == QEvent.Type.KeyPress:
+                key_event = event
+                if key_event.key() == 16777220:
+                    self.load_channel_clicked()
         if obj is self.url_input:
             if event.type() == QEvent.Type.FocusIn:
                 clipboard_text: str = QApplication.clipboard().text()
@@ -1421,6 +1456,6 @@ if __name__ == "__main__":
     Consts.Constanats.SCREEN_HEIGHT = primary_screen.height()
 
     window: MainWindow = MainWindow()
-    # window.showMaximized()
+    window.showMaximized()
     window.show()
     sys.exit(app.exec())

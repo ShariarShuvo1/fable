@@ -94,9 +94,19 @@ class DownloaderThread(QThread):
 
         if d['status'] == 'downloading':
             percent = d['_percent_str']
+            if percent.startswith("\x1b[0;94"):
+                percent = "100.0%"
+            else:
+                percent = percent.split(" ")
+                if len(percent) > 1:
+                    if len(percent) > 2:
+                        percent = percent[-1]
+                    else:
+                        percent = percent[1].split('%')[0]
+                else:
+                    percent = percent[0]
             percent = int(percent.split('.')[0])
             self.progress_updated.emit(percent)
-
             eta = d.get('eta')
             if eta is not None:
                 self.eta_updated.emit(eta)

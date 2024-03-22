@@ -38,6 +38,8 @@ if os.path.exists("settings.txt"):
             elif line.startswith("MAXIMUM_SIMULTANEOUS_DOWNLOADS:"):
                 MAXIMUM_SIMULTANEOUS_DOWNLOADS = int(
                     line.split(":")[1].strip())
+            elif line.startswith("MAXIMUM_SEARCH_RESULTS:"):
+                MAXIMUM_SEARCH_RESULTS = int(line.split(":")[1].strip())
             elif line.startswith("PLAYLIST_OUTPUT_PATH:"):
                 playlist_output_path_lst = line.split(":")[1:]
                 PLAYLIST_OUTPUT_PATH = ":".join(
@@ -58,6 +60,8 @@ if os.path.exists("settings.txt"):
             elif line.startswith("ALWAYS_FAST_AUDIO_STORY_MODE:"):
                 ALWAYS_FAST_AUDIO_STORY_MODE = line.split(
                     ":")[1].strip().lower() == "true"
+            elif line.startswith("VOLUME:"):
+                VOLUME = int(line.split(":")[1].strip())
 else:
     with open("settings.txt", "w") as file:
         OUTPUT_PATH = get_default_download_folder()
@@ -72,6 +76,8 @@ else:
         MAXIMUM_SIMULTANEOUS_DOWNLOADS = 5
         file.write(f"MAXIMUM_SIMULTANEOUS_DOWNLOADS: {
                    MAXIMUM_SIMULTANEOUS_DOWNLOADS}\n")
+        MAXIMUM_SEARCH_RESULTS = 10
+        file.write(f"MAXIMUM_SEARCH_RESULTS: {MAXIMUM_SEARCH_RESULTS}\n")
         PLAYLIST_OUTPUT_PATH = get_default_download_folder()
         file.write(f"PLAYLIST_OUTPUT_PATH: {PLAYLIST_OUTPUT_PATH}\n")
         ALWAYS_ASK_FOR_PLAYLIST_OUTPUT_PATH = True
@@ -88,6 +94,42 @@ else:
         ALWAYS_FAST_AUDIO_STORY_MODE = False
         file.write(f"ALWAYS_FAST_AUDIO_STORY_MODE: {
                    ALWAYS_FAST_AUDIO_STORY_MODE}\n")
+        VOLUME = 5
+        file.write(f"VOLUME: {VOLUME}\n")
+
+
+def set_maximum_search_results(value: int):
+    global MAXIMUM_SEARCH_RESULTS
+    MAXIMUM_SEARCH_RESULTS = value
+    with open("settings.txt", "r") as file:
+        lines = file.readlines()
+    with open("settings.txt", "w") as file:
+        for line in lines:
+            if line.startswith("MAXIMUM_SEARCH_RESULTS:"):
+                file.write(f"MAXIMUM_SEARCH_RESULTS: {value}\n")
+            else:
+                file.write(line)
+
+
+def get_maximum_search_results():
+    return MAXIMUM_SEARCH_RESULTS
+
+
+def set_volume(value: int):
+    global VOLUME
+    VOLUME = value
+    with open("settings.txt", "r") as file:
+        lines = file.readlines()
+    with open("settings.txt", "w") as file:
+        for line in lines:
+            if line.startswith("VOLUME:"):
+                file.write(f"VOLUME: {value}\n")
+            else:
+                file.write(line)
+
+
+def get_volume():
+    return VOLUME
 
 
 def set_audio_story_output_path(path: str):

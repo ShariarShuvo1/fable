@@ -84,3 +84,24 @@ AUDIO_STORY_DOWNLOAD_BUTTON_STYLESHEET: str = """
         background-color: darkgreen;
     }
 """
+SLIDER_STYLESHEET: str = """
+    QSlider {
+        background-color: #fae3ff;
+        border-radius: 5px;
+    }
+    QSlider::groove:horizontal {
+        height: 16px;
+        border-radius: 5px;
+        border: 1px solid #9a00bd;
+    }
+    QSlider::handle:horizontal {
+        width: 14px;
+        background-color: #9a00bd;
+        border-radius: 2px;
+    }
+    QSlider::handle:horizontal:pressed {
+        width: 4px;
+        background-color: #9a00bd;
+        border-radius: 2px;
+    }
+"""

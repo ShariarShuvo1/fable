@@ -41,7 +41,7 @@ TOOL_ICON_BUTTON_STYLESHEET: str = """
 
 TOOL_ICON_PLAY_BUTTON_STYLESHEET: str = """
     QPushButton {
-        background-color: #transparent;
+        background-color: transparent;
         padding: 5px;
         border: none;
     }

@@ -6,6 +6,7 @@ from PyQt6.QtGui import QPixmap, QIcon, QCursor
 from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QPushButton, QComboBox
 
 from Entity.Video import Video
+from Entity.VideoViewer import VideoViewer
 from Functions.convertBitsToReadableString import convert_bits_to_readable_string
 from Styles.CarouselStyle import CAROUSEL_THUMBNAIL_STYLESHEET, RESOLUTION_COMBOBOX_STYLESHEET
 from Styles.DownloadListStyle import VIDEO_TITLE_STYLESHEET, VIDEO_TITLE_BUTTON_STYLESHEET
@@ -36,6 +37,9 @@ class PlaylistCard:
         # self.playlist_box.setFixedHeight(DOWNLOAD_BOX_HEIGHT)
 
         self.thumbnail_label: QLabel = QLabel()
+        self.thumbnail_label.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.thumbnail_label.setToolTip("Click for preview")
+        self.thumbnail_label.mousePressEvent = self.on_thumbnail_click
         self.thumbnail_label.setStyleSheet(VIDEO_TITLE_STYLESHEET)
         self.thumbnail_label.setFixedHeight(60)
         self.thumbnail_label.setFixedWidth(90)
@@ -187,3 +191,7 @@ class PlaylistCard:
 
         self.remove_button.setHidden(False)
         self.add_button.setHidden(True)
+
+    def on_thumbnail_click(self, event):
+        viewer = VideoViewer(self.video)
+        viewer.exec()
