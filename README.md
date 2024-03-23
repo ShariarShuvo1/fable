@@ -1,10 +1,10 @@
-# Fabel
+# Fable
 
 A simple PyQt6 application for downloading videos and audio from YouTube, implemented in Python.
 
 ## Introduction
 
-Fabel is a desktop application built using PyQt6 that allows users to download videos and audio from YouTube. It provides a user-friendly interface for searching YouTube videos, playlists, and channels, and downloading them directly to the user's device.
+Fable is a desktop application built using PyQt6 that allows users to download videos and audio from YouTube. It provides a user-friendly interface for searching YouTube videos, playlists, and channels, and downloading them directly to the user's device.
 
 ## Features
 
@@ -33,7 +33,7 @@ To install the YouTube Downloader application, follow these steps:
 ``pip install -r requirements.txt``
 
 3. Run the application:
-    
+
 ``python main.py``
 
 or
