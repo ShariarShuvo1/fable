@@ -12,6 +12,21 @@ FOOTER_STYLESHEET = """
     }
 """
 
+ABOUT_ME_STYLESHEET = """
+    QPushButton {
+        color: white;
+        padding: 3px;
+        font-size: 12px;
+        border-radius: 5px;
+    }
+    QPushButton:hover {
+        background-color: #ec99ff;
+    }
+    QPushButton:pressed {
+        background-color: #e788fc;
+    }
+"""
+
 FOOTER_LABEL_STYLESHEET = """
     QLabel {
         color: black;

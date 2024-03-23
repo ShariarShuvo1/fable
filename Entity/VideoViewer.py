@@ -45,7 +45,7 @@ class VideoViewer(QDialog):
         self.label.setBaseSize(640, 480)
 
         self.setBaseSize(640, 480)
-        self.setWindowTitle(f"Thumbnail of {video.title}")
+        self.setWindowTitle(f"Thumbnail preview of: {video.title}")
         self.setWindowIcon(QIcon("Assets/logo.png"))
 
         self.layout = QVBoxLayout()
@@ -128,7 +128,7 @@ class VideoViewer(QDialog):
 
     def thumbnail_clicked(self, event):
         self.label.hide()
-        self.setWindowTitle(f"{self.video.title} Video")
+        self.setWindowTitle(f"Video preview of: {self.video.title}")
         self.video_player_widget.show()
         self.get_video_url()
 

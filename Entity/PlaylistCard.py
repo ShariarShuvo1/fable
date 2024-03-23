@@ -74,6 +74,7 @@ class PlaylistCard:
         self.remove_button: QPushButton = QPushButton()
         self.remove_button.setToolTip("Remove from Playlist")
         self.remove_button.setFixedHeight(100)
+        self.remove_button.setFixedWidth(100)
         self.remove_button.clicked.connect(self.remove_video)
         self.remove_button.setIcon(QIcon('./Assets/Icons/cancel-icon.png'))
         self.remove_button.setIconSize(QSize(20, 20))
@@ -84,6 +85,7 @@ class PlaylistCard:
         self.add_button: QPushButton = QPushButton()
         self.add_button.setToolTip("Add to Playlist")
         self.add_button.setFixedHeight(100)
+        self.add_button.setFixedWidth(100)
         self.add_button.clicked.connect(self.add_video)
         self.add_button.setIcon(QIcon('./Assets/Icons/add-icon.png'))
         self.add_button.setIconSize(QSize(20, 20))
@@ -156,6 +158,7 @@ class PlaylistCard:
         self.download_selected_res.setStyleSheet(
             DOWNLOAD_BUTTON_STYLESHEET)
         self.download_selected_res.setMinimumHeight(40)
+        self.download_selected_res.setFixedWidth(130)
         self.download_selected_res.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.bottom_layout.addWidget(self.download_selected_res)

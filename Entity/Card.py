@@ -1,10 +1,13 @@
 import os
+import subprocess
+import platform
 
 import PyQt6
 from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import QLabel, QVBoxLayout, QHBoxLayout, QProgressBar, QPushButton, QWidget, QMessageBox
+from PyQt6.QtWidgets import QLabel, QVBoxLayout, QHBoxLayout, QProgressBar, QPushButton, QWidget, QMessageBox, QCheckBox
 
+from Consts.SettingsData import get_ask_before_deleting, set_ask_before_deleting
 from Entity.File import File
 from Functions.convertBitsToReadableString import convert_bits_to_readable_string
 from Functions.format_time import format_time
@@ -54,11 +57,16 @@ class Card:
         self.delete_button.setHidden(False)
 
         self.completed_button = QPushButton()
-        self.completed_button.setToolTip("Download Completed")
+        self.completed_button.setToolTip(
+            "Download Completed\nClick to open in the folder")
         self.completed_button.setIcon(
             QIcon("./Assets/Icons/completed-icon.png"))
         self.completed_button.setIconSize(self.icon_size)
         self.completed_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
+        self.completed_button.clicked.connect(
+            lambda: self.completed_button_clicked())
+        self.completed_button.setCursor(
+            PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setFixedHeight(16)
@@ -146,26 +154,55 @@ class Card:
 
         self.construct_body()
 
+    def completed_button_clicked(self):
+        output_path = self.video.output_path
+        output_path = output_path.replace("\\", "/")
+        title_path = self.video.title
+        video_path = f"{output_path}/{title_path}"
+        if os.path.exists(video_path):
+            system = platform.system()
+            if system == "Windows":
+                os.startfile(os.path.dirname(video_path))
+            elif system == "Darwin":
+                subprocess.call(["open", "-R", video_path])
+            else:
+                subprocess.call(["xdg-open", os.path.dirname(video_path)])
+
     def delete_download(self):
         if (not self.thread.isRunning() and (self.video.status == "Downloaded" or self.video.status == "Queued")) or (self.thread.isRunning() and self.video.status == "Paused"):
-            msg_box = QMessageBox()
-            msg_box.setWindowIcon(QIcon("./Assets/logo.png"))
-            msg_box.setIcon(QMessageBox.Icon.Critical)
-            if self.video.status == "Paused":
-                msg_box.setText(
-                    f"Are you sure you want to delete:\n{self.video.title} ?"
-                    f"\n\nDeleting during paused state will not delete the .part file."
-                    f"Please delete the .part file manually.")
-            else:
-                msg_box.setText(
-                    f"Are you sure you want to delete:\n{self.video.title} ?")
-            msg_box.setWindowTitle("Delete Download")
-            msg_box.setStandardButtons(
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-            msg_box.setDefaultButton(
-                QMessageBox.StandardButton.Yes)
-            response = msg_box.exec()
-            if response == QMessageBox.StandardButton.Yes:
+            ask = False
+            if get_ask_before_deleting():
+                ask = True
+            if ask:
+                msg_box = QMessageBox()
+                msg_box.setWindowIcon(QIcon("./Assets/logo.png"))
+                msg_box.setIcon(QMessageBox.Icon.Critical)
+                remember_checkbox = QCheckBox("Never ask again")
+                msg_box.setCheckBox(remember_checkbox)
+                if self.video.status == "Paused":
+                    msg_box.setText(
+                        f"Are you sure you want to delete:\n{
+                            self.video.title} ?"
+                        f"\n\nDeleting during paused state will not delete the .part file."
+                        f"Please delete the .part file manually.")
+                else:
+                    msg_box.setText(
+                        f"Are you sure you want to delete:\n{self.video.title} ?")
+                msg_box.setWindowTitle("Delete Download")
+                msg_box.setStandardButtons(
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                msg_box.setDefaultButton(
+                    QMessageBox.StandardButton.Yes)
+                response = msg_box.exec()
+                if response == QMessageBox.StandardButton.Yes:
+                    if self.thread.isRunning() and self.video.status == "Paused":
+                        self.thread.terminate()
+                if remember_checkbox.isChecked():
+                    set_ask_before_deleting(False)
+                if os.path.exists(f"{self.video.output_path}/{self.video.title}"):
+                    os.remove(f"{self.video.output_path}/{self.video.title}")
+                self.main_window.delete_card_signal.emit(self)
+            elif not ask:
                 if self.thread.isRunning() and self.video.status == "Paused":
                     self.thread.terminate()
                 if os.path.exists(f"{self.video.output_path}/{self.video.title}"):
@@ -198,6 +235,7 @@ class Card:
             convert_bits_to_readable_string(self.video.file_size))
         self.delete_button.setHidden(False)
         self.construct_body()
+        self.main_window.download_complete_in_card()
 
     def pause_download_video(self):
         if self.video.status == "Downloading":

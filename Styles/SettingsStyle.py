@@ -9,22 +9,31 @@ OUTPUT_PATH_BUTTON_STYLE = """
         border-radius: 5px;
         padding: 5px;
         border: 1px solid black;
-        font-size: 20px;
+        font-size: 14px;
     }
     QPushButton:hover {
-        background-color: #ec99ff;
+        background-color: #e15cff;
     }
     QPushButton:pressed {
+        background-color: #c954e3;
+    }
+"""
+WHAT_IS_AUDIO_STORY_BUTTON_STYLE = """
+    QPushButton {
+        background-color: transparent;
+    }
+    QPushButton:hover {
         background-color: #e15cff;
+        border-radius: 5px;
     }
 """
 
 OUTPUT_PATH_LABEL_STYLE = """
     QLabel {
-        font-size: 20px;
+        font-size: 14px;
     }
     QCheckBox {
-        font-size: 20px;
+        font-size: 16px;
         padding: 5px;
         border-radius: 5px;
     }
@@ -38,7 +47,8 @@ OUTPUT_PATH_LABEL_STYLE = """
         background-color: #e15cff;
     }
     QCheckBox::indicator:checked {
-        background-color: blue;
+        background-color: #8400ff;
+        border-radius: 5px;
     }
     QCheckBox:checked:hover {
         background-color: #e15cff;
@@ -50,10 +60,11 @@ OUTPUT_PATH_LABEL_STYLE = """
         padding: 5px;
         border-radius: 5px;
         font-size: 16px;
-        background-color: #e15cff;
+        background-color: transparent;
+        border: 1px solid black;
     }
     QSpinBox:hover {
-        background-color: #ec99ff;
+        background-color: #e15cff;
     }
     QSpinBox::up-button {
         subcontrol-origin: border;
@@ -68,16 +79,18 @@ OUTPUT_PATH_LABEL_STYLE = """
         border-image: url(./Assets/Icons/dropdown_arrow.png);
     }
     QSpinBox::up-button:hover {
-        background-color: #ec99ff;
+        background-color: #c954e3;
+        border-radius: 5px;
     }
     QSpinBox::down-button:hover {
-        background-color: #ec99ff;
+        background-color: #c954e3;
+        border-radius: 5px;
     }
     QSpinBox::up-button:pressed {
-        background-color: #e15cff;
+        background-color: #b44bcc;
     }
     QSpinBox::down-button:pressed {
-        background-color: #e15cff;
+        background-color: #b44bcc;
     }
     
 """

@@ -1,4 +1,6 @@
 import os
+import platform
+import subprocess
 from datetime import datetime
 
 import PyQt6
@@ -6,6 +8,7 @@ from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QPushButton, QProgressBar, QMessageBox
 
+from Consts.SettingsData import get_ask_before_deleting
 from Entity.AudioStory import AudioStory
 from Entity.Resolution import Resolution
 from Entity.SubCard import SubCard
@@ -19,7 +22,7 @@ from Threads.SearchThread import SearchThread
 from Entity.File import File
 from Functions.convertBitsToReadableString import convert_bits_to_readable_string
 from Styles.DownloadListStyle import TOOL_ICON_BUTTON_STYLESHEET, VIDEO_TITLE_STYLESHEET, PROGRESS_BAR_STYLESHEET, \
-    VIDEO_STATUS_STYLESHEET
+    VIDEO_STATUS_STYLESHEET, TOOL_ICON_PLAY_BUTTON_STYLESHEET
 
 
 class AudioStoryCard:
@@ -68,8 +71,10 @@ class AudioStoryCard:
                 self.audio_story.set_title(
                     f"{sanitize_filename(self.audio_story_info_list[0].title)}.mp3")
             self.generate_body()
+            self.main_window.download_complete_in_card(self)
 
     def __init__(self, audio_story: AudioStory, main_window):
+        self.spacer_item = None
         self.audio_merging_thread = None
         self.main_window = main_window
         self.audio_story = audio_story
@@ -102,17 +107,22 @@ class AudioStoryCard:
             self.thread_list[-1].start()
 
         self.completed_button = QPushButton()
-        self.completed_button.setToolTip("Download Finished")
+        self.completed_button.setToolTip(
+            "Download Completed\nClick to open in the folder")
         self.completed_button.setIcon(
             QIcon("./Assets/Icons/completed-icon.png"))
         self.completed_button.setIconSize(self.icon_size)
         self.completed_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
+        self.completed_button.setCursor(
+            PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
+        self.completed_button.clicked.connect(
+            lambda: self.completed_button_clicked())
 
         self.play_button: QPushButton = QPushButton()
         self.play_button.setToolTip("Start Downloading This Audio Story")
         self.play_button.setIcon(QIcon("./Assets/Icons/play-icon.png"))
         self.play_button.setIconSize(self.icon_size)
-        self.play_button.setStyleSheet(TOOL_ICON_BUTTON_STYLESHEET)
+        self.play_button.setStyleSheet(TOOL_ICON_PLAY_BUTTON_STYLESHEET)
         self.play_button.setCursor(
             PyQt6.QtCore.Qt.CursorShape.PointingHandCursor)
         self.play_button.clicked.connect(lambda: self.begin_download())
@@ -237,19 +247,40 @@ class AudioStoryCard:
         self.remove_button.setHidden(True)
         self.delete_button.setHidden(True)
 
+    def completed_button_clicked(self):
+        output_path = self.audio_story.out_path
+        output_path = output_path.replace("\\", "/")
+        if os.path.exists(output_path):
+            system = platform.system()
+            if system == "Windows":
+                os.startfile(os.path.dirname(output_path))
+            elif system == "Darwin":
+                subprocess.call(["open", "-R", output_path])
+            else:
+                subprocess.call(["xdg-open", os.path.dirname(output_path)])
+
     def delete_audio_story(self):
-        msg_box = QMessageBox()
-        msg_box.setWindowIcon(QIcon("./Assets/logo.png"))
-        msg_box.setIcon(QMessageBox.Icon.Critical)
-        msg_box.setText(
-            f"Are you sure you want to delete:\n{self.audio_story.title} ?")
-        msg_box.setWindowTitle("Delete Download")
-        msg_box.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        msg_box.setDefaultButton(
-            QMessageBox.StandardButton.Yes)
-        response = msg_box.exec()
-        if response == QMessageBox.StandardButton.Yes:
+        ask = False
+        if get_ask_before_deleting():
+            ask = True
+        if ask:
+            msg_box = QMessageBox()
+            msg_box.setWindowIcon(QIcon("./Assets/logo.png"))
+            msg_box.setIcon(QMessageBox.Icon.Critical)
+            msg_box.setText(
+                f"Are you sure you want to delete:\n{self.audio_story.title} ?")
+            msg_box.setWindowTitle("Delete Download")
+            msg_box.setStandardButtons(
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            msg_box.setDefaultButton(
+                QMessageBox.StandardButton.Yes)
+            response = msg_box.exec()
+            if response == QMessageBox.StandardButton.Yes:
+                if self.audio_story.status == "Downloaded":
+                    if os.path.exists(self.audio_story.out_path):
+                        os.remove(self.audio_story.out_path)
+                self.main_window.delete_audio_story_card(self)
+        elif not ask:
             if self.audio_story.status == "Downloaded":
                 if os.path.exists(self.audio_story.out_path):
                     os.remove(self.audio_story.out_path)
@@ -317,6 +348,7 @@ class AudioStoryCard:
             self.file_size_label.setText(
                 convert_bits_to_readable_string(size_bytes))
             self.audio_story_box.setStyleSheet(WIDGET_DOWNLOADED_STYLESHEET)
+            self.main_window.download_complete_in_card(self)
 
     def progress_updated(self):
         progress = 0
@@ -377,9 +409,6 @@ class AudioStoryCard:
 
         self.title_label.show()
         self.title_label.setText(self.audio_story.title)
-        # self.progress_bar.show()
-        # self.speed_label.show()
-        # self.eta_label.show()
         self.status_label.show()
         self.file_size_label.show()
         self.datetime_label.show()

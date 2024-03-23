@@ -1,0 +1,5 @@
+PyQt6~=6.6.1
+requests~=2.31.0
+moviepy~=1.0.3
+proglog~=0.1.10
+eyed3~=0.9.7

@@ -62,6 +62,9 @@ if os.path.exists("settings.txt"):
                     ":")[1].strip().lower() == "true"
             elif line.startswith("VOLUME:"):
                 VOLUME = int(line.split(":")[1].strip())
+            elif line.startswith("ASK_BEFORE_DELETING:"):
+                ASK_BEFORE_DELETING = line.split(
+                    ":")[1].strip().lower() == "true"
 else:
     with open("settings.txt", "w") as file:
         OUTPUT_PATH = get_default_download_folder()
@@ -96,6 +99,25 @@ else:
                    ALWAYS_FAST_AUDIO_STORY_MODE}\n")
         VOLUME = 5
         file.write(f"VOLUME: {VOLUME}\n")
+        ASK_BEFORE_DELETING = True
+        file.write(f"ASK_BEFORE_DELETING: {ASK_BEFORE_DELETING}\n")
+
+
+def set_ask_before_deleting(value: bool):
+    global ASK_BEFORE_DELETING
+    ASK_BEFORE_DELETING = value
+    with open("settings.txt", "r") as file:
+        lines = file.readlines()
+    with open("settings.txt", "w") as file:
+        for line in lines:
+            if line.startswith("ASK_BEFORE_DELETING:"):
+                file.write(f"ASK_BEFORE_DELETING: {value}\n")
+            else:
+                file.write(line)
+
+
+def get_ask_before_deleting():
+    return ASK_BEFORE_DELETING
 
 
 def set_maximum_search_results(value: int):

@@ -20,7 +20,7 @@ class ToggleButton(QPushButton):
             bg_color = QColor("#7d7d7d")
             circle_color = QColor("#9e9e9e")
         elif self.underMouse():
-            bg_color = QColor("#ec99ff")
+            bg_color = QColor("#e15cff")
             circle_color = QColor("#FFFFFF")
         else:
             bg_color = QColor("#BDBDBD")

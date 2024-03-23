@@ -33,6 +33,7 @@ class DownloaderThread(QThread):
                 'outtmpl': f'{self.output_path}/{self.file.title}',
                 'format': self.format_id,
                 'progress_hooks': [self.progress_hook],
+                'embed_thumbnail': True,
             }
             self.card.pause_button.setDisabled(True)
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -77,7 +78,7 @@ class DownloaderThread(QThread):
                 audio = audio.set_duration(video.duration)
                 video = video.set_audio(audio)
                 video.write_videofile(
-                    output_file, codec='libx264', audio_codec='aac', logger=logger)
+                    output_file, codec='h264_nvenc', audio_codec='aac', logger=logger)
                 if os.path.exists(video_file):
                     os.remove(video_file)
                 if os.path.exists(audio_file):
