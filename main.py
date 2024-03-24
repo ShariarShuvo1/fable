@@ -8,7 +8,6 @@ from PyQt6.QtGui import QGuiApplication, QIcon, QPixmap, QMovie
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QLineEdit, \
     QLabel, QComboBox, QMessageBox, QProgressBar, QScrollArea, QFileDialog, QSplitter, QSpinBox, QCheckBox
 
-from Entity.AboutMe import AboutMe
 from Entity.AudioStory import AudioStory
 from Entity.AudioStoryCard import AudioStoryCard
 from Entity.AudioStoryPreviewCard import AudioStoryPreviewCard
@@ -21,8 +20,8 @@ from Entity.Resolution import Resolution
 from Entity.ToggleButton import ToggleButton
 from Entity.Video import Video
 from Entity.File import File
-from Entity.VideoViewer import VideoViewer
 from Functions.SanitizeFilename import *
+from Functions.about_me_clicked import about_me_clicked
 from Functions.convertBitsToReadableString import convert_bits_to_readable_string
 from Functions.format_time import format_time
 from Functions.format_view_count import format_view_count
@@ -768,7 +767,7 @@ class MainWindow(QMainWindow):
         about_me.setStyleSheet(ABOUT_ME_STYLESHEET)
         about_me.setCursor(Qt.CursorShape.PointingHandCursor)
         about_me.clicked.connect(
-            lambda: self.about_me_clicked())
+            lambda: about_me_clicked())
         self.footer_layout.addWidget(about_me)
 
         self.footer_layout.addStretch()
@@ -829,10 +828,6 @@ class MainWindow(QMainWindow):
     def playlist_deselect_all_clicked(self):
         for card in self.playlist_list:
             card.remove_video()
-
-    def about_me_clicked(self):
-        about_me = AboutMe()
-        about_me.exec()
 
     def clear_channel_video_list(self):
         if self.channel_search_thread is not None and self.channel_search_thread.isRunning():
@@ -963,6 +958,8 @@ class MainWindow(QMainWindow):
                 return
             elif not direct and len(self.audio_story_list) == 0:
                 return
+        if direct and not is_youtube_url(url):
+            return
         output_path = get_audio_story_output_path()
         if get_always_ask_for_audio_story_output_path():
             output_path = QFileDialog.getExistingDirectory(

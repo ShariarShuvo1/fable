@@ -5,7 +5,7 @@ from Consts.SettingsData import *
 
 class File:
     def __init__(self, title: str, webpage_url: str, format_id: str, download_url: str, file_type: str, status: str,
-                 added_date: datetime, file_size: int | None = None, output_path: str = OUTPUT_PATH,
+                 added_date: datetime, file_size: int | None = None, output_path: str = get_output_path(),
                  add_music: bool = False) -> None:
         self.title: str = title
         self.webpage_url: str = webpage_url
