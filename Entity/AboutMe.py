@@ -1,14 +1,9 @@
-import webbrowser
-
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QHBoxLayout, QPushButton
 
+from Functions.open_channel import open_channel
 from Styles.AboutMeStyle import *
-
-
-def open_channel(url):
-    webbrowser.open(url)
 
 
 class AboutMe(QDialog):

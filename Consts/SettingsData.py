@@ -20,8 +20,8 @@ ALWAYS_ASK_FOR_OUTPUT_PATH = None
 ALWAYS_ASK_TO_ADD_MUSIC = None
 MAXIMUM_SIMULTANEOUS_DOWNLOADS = None
 
-if os.path.exists("settings.txt"):
-    with open("settings.txt", "r") as file:
+if os.path.exists("settings.fbt"):
+    with open("settings.fbt", "r") as file:
         lines = file.readlines()
         for line in lines:
             if line.startswith("OUTPUT_PATH:"):
@@ -66,7 +66,7 @@ if os.path.exists("settings.txt"):
                 ASK_BEFORE_DELETING = line.split(
                     ":")[1].strip().lower() == "true"
 else:
-    with open("settings.txt", "w") as file:
+    with open("settings.fbt", "w") as file:
         OUTPUT_PATH = get_default_download_folder()
         file.write(f"OUTPUT_PATH: {OUTPUT_PATH}\n")
         ALWAYS_ASK_FOR_OUTPUT_PATH = True

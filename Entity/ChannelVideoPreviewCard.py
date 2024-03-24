@@ -2,9 +2,10 @@ from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QPixmap, QIcon, QCursor
 from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QPushButton
 
-from Entity.PlaylistCard import open_url, format_duration
+from Entity.PlaylistCard import format_duration
 from Entity.Video import Video
-from Entity.VideoViewer import VideoViewer
+from Functions.open_channel import open_channel
+from Functions.thumbnail_clicked import thumbnail_clicked
 from Styles.CarouselStyle import CAROUSEL_THUMBNAIL_STYLESHEET
 from Styles.DownloadListStyle import VIDEO_TITLE_STYLESHEET, VIDEO_TITLE_BUTTON_STYLESHEET
 from Styles.PlaylistCardStyle import (
@@ -31,7 +32,8 @@ class ChannelVideoPreviewCard:
         self.thumbnail_label.setFixedWidth(90)
         self.thumbnail_label.setFixedHeight(60)
         self.thumbnail_label.setStyleSheet(CAROUSEL_THUMBNAIL_STYLESHEET)
-        self.thumbnail_label.mousePressEvent = self.on_thumbnail_click
+        self.thumbnail_label.mousePressEvent = lambda event: thumbnail_clicked(
+            self.video)
 
         self.pixmap = QPixmap()
         self.pixmap.loadFromData(video.thumbnail.content)
@@ -44,7 +46,7 @@ class ChannelVideoPreviewCard:
         self.title_label.setToolTip(video.title)
         self.title_label.setStyleSheet(VIDEO_TITLE_BUTTON_STYLESHEET)
         self.title_label.clicked.connect(
-            lambda checked: open_url(video.video_url))
+            lambda checked: open_channel(video.video_url))
 
         self.channel_label: QPushButton = QPushButton(
             f"Channel: {video.uploader}")
@@ -53,7 +55,7 @@ class ChannelVideoPreviewCard:
         self.channel_label.setToolTip(video.uploader)
         self.channel_label.setStyleSheet(VIDEO_TITLE_BUTTON_STYLESHEET)
         self.channel_label.clicked.connect(
-            lambda: open_url(video.channel_url))
+            lambda: open_channel(video.channel_url))
 
         self.duration_label: QLabel = QLabel(
             f"Duration: {format_duration(video.duration)}")
@@ -108,7 +110,3 @@ class ChannelVideoPreviewCard:
     def audio_story_download_direct(self):
         self.main_window.audio_story_download_clicked(
             True, self.video.video_url)
-
-    def on_thumbnail_click(self, event):
-        viewer = VideoViewer(self.video)
-        viewer.exec()

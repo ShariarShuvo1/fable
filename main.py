@@ -1,6 +1,5 @@
 import math
 import sys
-import webbrowser
 from datetime import datetime
 from typing import List
 
@@ -24,6 +23,11 @@ from Entity.Video import Video
 from Entity.File import File
 from Entity.VideoViewer import VideoViewer
 from Functions.SanitizeFilename import *
+from Functions.convertBitsToReadableString import convert_bits_to_readable_string
+from Functions.format_time import format_time
+from Functions.format_view_count import format_view_count
+from Functions.open_channel import open_channel
+from Functions.thumbnail_clicked import thumbnail_clicked
 from Functions.youtube_url_checker import *
 from Resource.audio_story_channel import AUDIO_STORY_CHANNEL
 from Resource.bracu import BRACU_COURSE_DATA
@@ -41,44 +45,6 @@ from Threads.ChannelSearchThread import ChannelSearchThread
 from Threads.SearchPlaylistThread import SearchPlaylistThread
 from Threads.SearchThread import SearchThread
 from settings import SettingsWindow
-
-
-def open_channel(url):
-    webbrowser.open(url)
-
-
-def format_view_count(view_count):
-    if view_count >= 1_000_000_000:
-        return f"{view_count // 1_000_000_000}B"
-    elif view_count >= 1_000_000:
-        return f"{view_count // 1_000_000}M"
-    elif view_count >= 1_000:
-        return f"{view_count // 1_000}K"
-    else:
-        return str(view_count)
-
-
-def format_duration(duration):
-    hours, remainder = divmod(duration, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    if hours > 0:
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-    else:
-        return f"{minutes:02d}:{seconds:02d}"
-
-
-def convert_bits_to_readable_string(bits):
-    units = ['B', 'KB', 'MB', 'GB']
-    index = 0
-    while bits >= 1024 and index < len(units) - 1:
-        bits /= 1024.0
-        index += 1
-    return '{:.1f}{}'.format(bits, units[index])
-
-
-def thumbnail_clicked(video: Video):
-    viewer = VideoViewer(video)
-    viewer.exec()
 
 
 class MainWindow(QMainWindow):
@@ -229,6 +195,7 @@ class MainWindow(QMainWindow):
         self.channel_video_list: List[ChannelVideoPreviewCard] = []
 
         self.setWindowTitle("Fable")
+        self.setMinimumSize(800, 600)
         self.setStyleSheet(WINDOW_STYLESHEET)
         self.setWindowIcon(QIcon("./Assets/logo.png"))
 
@@ -681,6 +648,30 @@ class MainWindow(QMainWindow):
         self.playlist_scroll_area.setWidget(self.playlist_container)
         self.playlist_layout.addWidget(self.playlist_scroll_area)
 
+        self.playlist_scroll_layout.addStretch()
+
+        self.playlist_select_all_button = QPushButton("Select All")
+        self.playlist_select_all_button.setToolTip("Select All Videos")
+        self.playlist_select_all_button.setMaximumHeight(40)
+        self.playlist_select_all_button.setCursor(
+            Qt.CursorShape.PointingHandCursor)
+        self.playlist_select_all_button.setStyleSheet(
+            PLAYLIST_SELECT_BUTTON_STYLESHEET)
+        self.playlist_select_all_button.clicked.connect(
+            self.playlist_select_all_clicked)
+        self.playlist_select_all_button.setHidden(True)
+
+        self.playlist_deselect_all_button = QPushButton("Deselect All")
+        self.playlist_deselect_all_button.setToolTip("Deselect All Videos")
+        self.playlist_deselect_all_button.setMaximumHeight(40)
+        self.playlist_deselect_all_button.setCursor(
+            Qt.CursorShape.PointingHandCursor)
+        self.playlist_deselect_all_button.setStyleSheet(
+            PLAYLIST_DESELECT_BUTTON_STYLESHEET)
+        self.playlist_deselect_all_button.clicked.connect(
+            self.playlist_deselect_all_clicked)
+        self.playlist_deselect_all_button.setHidden(True)
+
         self.playlist_resolution_combo = QComboBox()
         self.playlist_resolution_combo.setToolTip(
             "Choose Quality For Selected")
@@ -717,8 +708,11 @@ class MainWindow(QMainWindow):
             lambda checked,
             combo=self.playlist_resolution_combo: self.playlist_download_clicked(combo.currentIndex())
         ))
+        self.playlist_layout.addWidget(self.playlist_select_all_button)
+        self.playlist_layout.addWidget(self.playlist_deselect_all_button)
+        self.playlist_layout.addSpacing(2)
         self.playlist_layout.addWidget(self.playlist_resolution_combo)
-        self.playlist_layout.addSpacing(5)
+        self.playlist_layout.addSpacing(2)
         self.playlist_layout.addWidget(self.playlist_download_button)
 
         self.playlist_widget.setLayout(self.playlist_layout)
@@ -828,6 +822,14 @@ class MainWindow(QMainWindow):
         container.setLayout(main_layout)
         self.setCentralWidget(container)
 
+    def playlist_select_all_clicked(self):
+        for card in self.playlist_list:
+            card.add_video()
+
+    def playlist_deselect_all_clicked(self):
+        for card in self.playlist_list:
+            card.remove_video()
+
     def about_me_clicked(self):
         about_me = AboutMe()
         about_me.exec()
@@ -928,8 +930,10 @@ class MainWindow(QMainWindow):
             if self.search_playlist_thread and self.search_playlist_thread.isRunning():
                 self.search_playlist_thread.terminate()
             self.search_playlist_thread = SearchPlaylistThread(search_text)
+            self.search_playlist_thread.search_update.connect(
+                self.on_playlist_search_update)
             self.search_playlist_thread.search_finished.connect(
-                self.on_playlist_search_finished)
+                self.on_playlist_search_complete)
             self.search_playlist_thread.total_videos.connect(
                 self.total_video_in_playlist)
             self.search_playlist_thread.completed_videos.connect(
@@ -1220,6 +1224,9 @@ class MainWindow(QMainWindow):
             self.clear_playlist()
 
     def clear_playlist(self):
+        self.playlist_card_selection_changed()
+        self.playlist_select_all_button.setHidden(True)
+        self.playlist_deselect_all_button.setHidden(True)
         self.playlist_resolution_combo.setDisabled(True)
         self.playlist_resolution_combo.setCurrentIndex(-1)
         self.playlist_download_button.setDisabled(True)
@@ -1274,8 +1281,10 @@ class MainWindow(QMainWindow):
                 if self.search_playlist_thread and self.search_playlist_thread.isRunning():
                     self.search_playlist_thread.terminate()
                 self.search_playlist_thread = SearchPlaylistThread(search_text)
+                self.search_playlist_thread.search_update.connect(
+                    self.on_playlist_search_update)
                 self.search_playlist_thread.search_finished.connect(
-                    self.on_playlist_search_finished)
+                    self.on_playlist_search_complete)
                 self.search_playlist_thread.total_videos.connect(
                     self.total_video_in_playlist)
                 self.search_playlist_thread.completed_videos.connect(
@@ -1309,7 +1318,30 @@ class MainWindow(QMainWindow):
         self.search_cancel_button.setHidden(True)
         self.array_changed.emit()
 
-    def on_playlist_search_finished(self, result_list):
+    def playlist_card_selection_changed(self):
+        selected = True
+        for card in self.playlist_list:
+            if not card.add_button.isHidden():
+                selected = False
+                break
+        if selected:
+            self.playlist_select_all_button.setHidden(True)
+            self.playlist_deselect_all_button.setHidden(False)
+        else:
+            self.playlist_select_all_button.setHidden(False)
+            self.playlist_deselect_all_button.setHidden(True)
+
+    def on_playlist_search_complete(self):
+        self.playlist_card_selection_changed()
+        self.playlist_resolution_combo.setDisabled(False)
+        self.playlist_download_button.setDisabled(False)
+        self.playlist_progress.setHidden(True)
+        self.url_input.setDisabled(False)
+        self.search_cancel_button.setHidden(True)
+        self.search_button.setHidden(False)
+        self.loading_label.setVisible(False)
+
+    def on_playlist_search_update(self, result_list):
         if len(result_list) == 0:
             self.clear_playlist()
             self.playlist_progress.setValue(0)
@@ -1319,20 +1351,10 @@ class MainWindow(QMainWindow):
             self.loading_label.setVisible(False)
             self.playlist_widget.setHidden(True)
             return
-        self.playlist_resolution_combo.setDisabled(False)
-        self.playlist_download_button.setDisabled(False)
-        self.playlist_progress.setHidden(True)
-        self.url_input.setDisabled(False)
-        self.search_cancel_button.setHidden(True)
-        self.search_button.setHidden(False)
-        self.loading_label.setVisible(False)
-        idx = 0
         for video in result_list:
             self.playlist_list.append(PlaylistCard(video, self))
             self.playlist_scroll_layout.insertWidget(
-                idx, self.playlist_list[-1].playlist_box)
-            idx += 1
-        self.playlist_scroll_layout.addStretch()
+                len(self.playlist_list)-1, self.playlist_list[-1].playlist_box)
 
     def update_carousel(self):
         for i in reversed(range(self.carousel_layout.count())):
@@ -1454,7 +1476,7 @@ class MainWindow(QMainWindow):
             views.setStyleSheet(CAROUSEL_GENERAL_DATA_STYLESHEET)
 
             duration = QLabel(
-                f"Duration: {format_duration(current_video.duration)}")
+                f"Duration: {format_time(current_video.duration)}")
             duration.setStyleSheet(CAROUSEL_GENERAL_DATA_STYLESHEET)
             extra_info_layout = QHBoxLayout()
             extra_info_layout.addWidget(views)

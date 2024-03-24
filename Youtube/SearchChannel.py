@@ -12,6 +12,7 @@ def search_channel(url, begin, finish, result_list=None):
         'quiet': True,
         'playlist_items': f'{begin}-{finish}',
         'geo_bypass': True,
+        'no_warnings': True,
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:

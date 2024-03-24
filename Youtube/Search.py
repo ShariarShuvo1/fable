@@ -14,6 +14,7 @@ def search_youtube(query, max_results=10, result_list=None):
         'noplaylist': True,
         'max_results': max_results,
         'geo_bypass': True,
+        'no_warnings': True,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:

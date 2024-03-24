@@ -1,7 +1,6 @@
 import tempfile
-import webbrowser
 
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QHBoxLayout, QSlider, QPushButton, QApplication, QWidget
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QHBoxLayout, QSlider, QPushButton, QWidget
 from PyQt6.QtGui import QIcon, QCloseEvent, QPixmap
 from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
@@ -10,12 +9,9 @@ from PyQt6.QtCore import QUrl, Qt, QSize
 from Consts.SettingsData import get_volume, set_volume
 from Entity.Video import Video
 from Functions.format_time import format_time
+from Functions.open_channel import open_channel
 from Styles.AudioStyleCardStyle import SLIDER_STYLESHEET
 from Styles.BRACU_STYLE import OPEN_BROWSER_BUTTON_STYLESHEET
-
-
-def open_channel(url):
-    webbrowser.open(url)
 
 
 class VideoViewer(QDialog):

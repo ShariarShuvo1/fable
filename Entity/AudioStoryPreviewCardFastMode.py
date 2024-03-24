@@ -2,7 +2,7 @@ from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QIcon, QCursor
 from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QPushButton
 
-from Entity.PlaylistCard import open_url
+from Functions.open_channel import open_channel
 from Styles.DownloadListStyle import VIDEO_TITLE_STYLESHEET, VIDEO_TITLE_BUTTON_STYLESHEET
 from Styles.PlaylistCardStyle import (PLAYLIST_CARD_STYLESHEET, REMOVE_BUTTON_STYLESHEET,
                                       ADD_BUTTON_STYLESHEET, PLAYLIST_CARD_DISABLED_STYLESHEET)
@@ -25,7 +25,7 @@ class AudioStoryPreviewCardFastMode:
         self.title_label.setStyleSheet(VIDEO_TITLE_BUTTON_STYLESHEET)
         self.title_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.title_label.clicked.connect(
-            lambda: open_url(self.url))
+            lambda: open_channel(self.url))
 
         self.remove_button: QPushButton = QPushButton()
         self.remove_button.setToolTip("Remove")

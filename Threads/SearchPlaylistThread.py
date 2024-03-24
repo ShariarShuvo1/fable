@@ -4,7 +4,8 @@ from Youtube.SearchPlaylist import search_youtube_playlist
 
 
 class SearchPlaylistThread(QThread):
-    search_finished = pyqtSignal(list)
+    search_update = pyqtSignal(list)
+    search_finished = pyqtSignal()
     total_videos = pyqtSignal(int)
     completed_videos = pyqtSignal(int)
 
@@ -13,6 +14,5 @@ class SearchPlaylistThread(QThread):
         self.query = query
 
     def run(self):
-        result_list = []
-        search_youtube_playlist(self.query, self, result_list)
-        self.search_finished.emit(result_list)
+        search_youtube_playlist(self.query, self)
+        self.search_finished.emit()

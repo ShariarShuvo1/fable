@@ -2,9 +2,10 @@ from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QPixmap, QIcon, QCursor
 from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QPushButton
 
-from Entity.PlaylistCard import open_url, format_duration
+from Entity.PlaylistCard import format_duration
 from Entity.Video import Video
-from Entity.VideoViewer import VideoViewer
+from Functions.open_channel import open_channel
+from Functions.thumbnail_clicked import thumbnail_clicked
 from Styles.CarouselStyle import CAROUSEL_THUMBNAIL_STYLESHEET
 from Styles.DownloadListStyle import VIDEO_TITLE_STYLESHEET, VIDEO_TITLE_BUTTON_STYLESHEET
 from Styles.PlaylistCardStyle import (PLAYLIST_CARD_STYLESHEET, REMOVE_BUTTON_STYLESHEET,
@@ -26,7 +27,8 @@ class AudioStoryPreviewCard:
         self.thumbnail_label: QLabel = QLabel()
         self.thumbnail_label.setCursor(Qt.CursorShape.PointingHandCursor)
         self.thumbnail_label.setToolTip("Click for preview")
-        self.thumbnail_label.mousePressEvent = self.on_thumbnail_click
+        self.thumbnail_label.mousePressEvent = lambda event: thumbnail_clicked(
+            self.video)
         self.thumbnail_label.setWordWrap(True)
         self.thumbnail_label.setStyleSheet(VIDEO_TITLE_STYLESHEET)
         self.thumbnail_label.setFixedWidth(90)
@@ -44,7 +46,7 @@ class AudioStoryPreviewCard:
         self.title_label.setToolTip(video.title)
         self.title_label.setStyleSheet(VIDEO_TITLE_BUTTON_STYLESHEET)
         self.title_label.clicked.connect(
-            lambda: open_url(video.video_url))
+            lambda: open_channel(video.video_url))
 
         self.channel_label: QPushButton = QPushButton(
             f"Channel: {video.uploader}")
@@ -53,7 +55,7 @@ class AudioStoryPreviewCard:
         self.channel_label.setToolTip(video.uploader)
         self.channel_label.setStyleSheet(VIDEO_TITLE_BUTTON_STYLESHEET)
         self.channel_label.clicked.connect(
-            lambda: open_url(video.channel_url))
+            lambda: open_channel(video.channel_url))
 
         self.duration_label: QLabel = QLabel(
             f"Duration: {format_duration(video.duration)}")
@@ -112,7 +114,3 @@ class AudioStoryPreviewCard:
 
         self.remove_button.setHidden(False)
         self.add_button.setHidden(True)
-
-    def on_thumbnail_click(self, event):
-        viewer = VideoViewer(self.video)
-        viewer.exec()

@@ -111,6 +111,40 @@ PROGRESS_BAR_STYLESHEET: str = """
     
 """
 
+PLAYLIST_SELECT_BUTTON_STYLESHEET: str = """
+    QPushButton {
+        background-color: #9a00bd;
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+        padding: 5px;
+        border-radius: 5px;
+    }
+    QPushButton:hover {
+        background-color: #9302ad;
+    }
+    QPushButton:pressed {
+        background-color: #66017a;
+    }
+"""
+
+PLAYLIST_DESELECT_BUTTON_STYLESHEET: str = """
+    QPushButton {
+        background-color: #c889d6;
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+        padding: 5px;
+        border-radius: 5px;
+    }
+    QPushButton:hover {
+        background-color: #a774b3;
+    }
+    QPushButton:pressed {
+        background-color: #815a8a;
+    }
+"""
+
 SCROLL_AREA_STYLESHEET: str = """
     QScrollArea {
         border: none;

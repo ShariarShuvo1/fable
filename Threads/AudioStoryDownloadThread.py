@@ -30,6 +30,8 @@ class AudioStoryDownloaderThread(QThread):
                 'outtmpl': f'{self.output_path}/{self.file.title}',
                 'format': self.format_id,
                 'progress_hooks': [self.progress_hook],
+                'no_warnings': True,
+                "quiet": True,
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 if self.file.file_type == "audio":
@@ -49,7 +51,7 @@ class AudioStoryDownloaderThread(QThread):
         if d['status'] == 'downloading':
             percent = d['_percent_str']
             percent = d['_percent_str']
-            if percent.startswith("\x1b[0;94"):
+            if percent.startswith("\x1b[0;94m100"):
                 percent = "100.0%"
             else:
                 percent = percent.split(" ")
